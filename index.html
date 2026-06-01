@@ -208,8 +208,9 @@
   <div class="ctrl-group">
     <label>Min Score</label>
     <select id="minScore">
-      <option value="75">75% Medium+</option>
-      <option value="90" selected>90% Strong</option>
+      <option value="65">65% Any Signal</option>
+      <option value="75" selected>75% Medium+</option>
+      <option value="90">90% Strong Only</option>
     </select>
   </div>
   <button class="btn btn-start" id="btnStart" onclick="startFetching()">▶ START</button>
@@ -273,31 +274,33 @@ PAIRS.forEach(p=>{priceHistory[p]=[];htfHistory[p]=[];lastSignalTime[p]=0});
 
 // Real live prices fetched from free APIs – updated every tick
 let livePx={};
+// Realistic seed prices — updated regularly by maintainer, used as fallback
+const SEED_PX={'EUR/USD':1.0845,'GBP/USD':1.2730,'USD/JPY':149.50,'AUD/USD':0.6520};
 // Volatility per pip for realistic candle construction
 const VOL={'EUR/USD':0.00018,'GBP/USD':0.00022,'USD/JPY':0.022,'AUD/USD':0.00016};
 // Per-pair trend state seeded off real price
 let simTrend={},simRegime={};
 PAIRS.forEach(p=>{simTrend[p]=0;simRegime[p]=0});
 
-/* ── Fetch real price from Frankfurter (ECB data, free, no key) ── */
+/* ── Fetch real price from Frankfurter (ECB data, free, no CORS issues) ── */
 async function fetchFrankfurterPrice(pair){
   try{
     const [base,quote]=pair.split('/');
     const url=`https://api.frankfurter.app/latest?from=${base}&to=${quote}`;
-    const r=await fetch(url,{signal:AbortSignal.timeout(4000)});
+    const r=await fetch(url,{signal:AbortSignal.timeout(5000)});
     if(!r.ok) return null;
     const d=await r.json();
     const px=d.rates?.[quote];
-    return px?+px:null;
+    return px&&+px>0?+px:null;
   }catch{return null}
 }
 
-/* ── Fetch real price from exchangerate.host (free, no key) ── */
-async function fetchExchangeRateHost(pair){
+/* ── Fetch real price from open.er-api.com (free, no key, good CORS) ── */
+async function fetchOpenERApi(pair){
   try{
     const [base,quote]=pair.split('/');
-    const url=`https://api.exchangerate.host/latest?base=${base}&symbols=${quote}&source=ecb`;
-    const r=await fetch(url,{signal:AbortSignal.timeout(4000)});
+    const url=`https://open.er-api.com/v6/latest/${base}`;
+    const r=await fetch(url,{signal:AbortSignal.timeout(5000)});
     if(!r.ok) return null;
     const d=await r.json();
     return d.rates?.[quote]?+d.rates[quote]:null;
@@ -309,7 +312,7 @@ async function fetchFreeForexApi(pair){
   try{
     const sym=pair.replace('/','_');
     const url=`https://www.freeforexapi.com/api/live?pairs=${sym}`;
-    const r=await fetch(url,{signal:AbortSignal.timeout(4000)});
+    const r=await fetch(url,{signal:AbortSignal.timeout(5000)});
     if(!r.ok) return null;
     const d=await r.json();
     return d.rates?.[sym]?.rate?+d.rates[sym].rate:null;
@@ -324,43 +327,50 @@ async function fetchLivePrice(pair){
     try{
       const sym=pair.replace('/','');
       const url=`https://api.twelvedata.com/price?symbol=${sym}&apikey=${key}`;
-      const r=await fetch(url,{signal:AbortSignal.timeout(4000)});
+      const r=await fetch(url,{signal:AbortSignal.timeout(5000)});
       const d=await r.json();
-      if(d.price) return +d.price;
+      if(d.price&&+d.price>0) return +d.price;
     }catch{}
   }
   // Try free sources in parallel, take first non-null
   const [f1,f2,f3]=await Promise.allSettled([
     fetchFrankfurterPrice(pair),
-    fetchExchangeRateHost(pair),
+    fetchOpenERApi(pair),
     fetchFreeForexApi(pair)
   ]);
   for(const res of [f1,f2,f3]){
     if(res.status==='fulfilled'&&res.value&&res.value>0) return res.value;
   }
-  return null;
+  // Final fallback: use realistic seed price (never return 1.0)
+  return SEED_PX[pair]||null;
 }
 
 /* ── Update all live prices ── */
 async function updateLivePrices(){
+  // Pre-seed simPx with realistic prices before fetching
+  PAIRS.forEach(p=>{if(!simPx[p]||simPx[p]===1.0) simPx[p]=SEED_PX[p]||simPx[p]});
   const fetches=PAIRS.map(async p=>{
     const px=await fetchLivePrice(p);
     if(px&&px>0){
       livePx[p]=px;
       // Sync simulation anchor to real price
       simPx[p]=px;
+    } else if(!livePx[p]){
+      // Use seed price as fallback if no live price ever fetched
+      livePx[p]=SEED_PX[p];
+      simPx[p]=SEED_PX[p];
     }
   });
   await Promise.allSettled(fetches);
   // Show live price source badge
-  const hasAny=Object.keys(livePx).length>0;
-  document.getElementById('priceSrcBadge').textContent=hasAny?'● LIVE PRICES':'● SIM PRICES';
-  document.getElementById('priceSrcBadge').style.color=hasAny?'var(--green)':'var(--yellow)';
+  const hasReal=PAIRS.some(p=>livePx[p]&&Math.abs(livePx[p]-SEED_PX[p])>0.0001);
+  document.getElementById('priceSrcBadge').textContent=hasReal?'● LIVE PRICES':'● SEED PRICES';
+  document.getElementById('priceSrcBadge').style.color=hasReal?'var(--green)':'var(--yellow)';
 }
 
 /* ── Build realistic candle anchored to real price ── */
 let simPx={};
-PAIRS.forEach(p=>{simPx[p]=livePx[p]||1.0});
+PAIRS.forEach(p=>{simPx[p]=SEED_PX[p]||1.0});
 
 function simulateTick(pair){
   // Always anchor to live price if available
@@ -382,7 +392,7 @@ function simulateTick(pair){
 }
 
 function buildSimHistory(pair,length=130){
-  const base=livePx[pair]||simPx[pair]||1.0;
+  const base=livePx[pair]||simPx[pair]||SEED_PX[pair]||1.0;
   simPx[pair]=base;
   const candles=[];
   for(let i=0;i<length;i++){
@@ -837,7 +847,7 @@ function calcExpiry(atr,intervalStr){
 ═══════════════════════════════════════════════════════════════ */
 function generateSignal(pair,candles,htf){
   if(candles.length<120) return null;
-  const _tfCooldown={'1min':45000,'5min':180000,'15min':540000};
+  const _tfCooldown={'1min':20000,'5min':60000,'15min':180000};
   const _cooldown=_tfCooldown[document.getElementById('interval')?.value||'5min']||180000;
   if(Date.now()-lastSignalTime[pair]<_cooldown) return null;
 
@@ -877,7 +887,7 @@ function generateSignal(pair,candles,htf){
   filters.emaNoCompression=!emaStack.isCompressed;
   filters.bbNotSqueeze=!bb.isSqueeze;
   filters.notRanging=ms.structure!=='RANGING';
-  filters.session=session.tradeable;
+  filters.session=session.tradeable;  // informational only — not a hard block
   filters.news=!news.blocked;
   filters.regime=regime.tradeable;
 
@@ -886,12 +896,7 @@ function generateSignal(pair,candles,htf){
     blockedCount++;document.getElementById('statBlocked').textContent=blockedCount;
     return{pair,price,signalType:'WAIT',blocked:'NEWS',blockedLabel:news.label,filters,session,news,regime,expiry,time:new Date()};
   }
-  // Regime hard-block
-  if(!regime.tradeable){
-    blockedCount++;document.getElementById('statBlocked').textContent=blockedCount;
-    return{pair,price,signalType:'WAIT',blocked:'REGIME',blockedLabel:regime.regime,filters,session,news,regime,expiry,time:new Date()};
-  }
-  // Core gates
+  // Core gates (regime no longer hard-blocks — it reduces score via multiplier instead)
   if(!filters.atr||!filters.emaNoCompression||!filters.bbNotSqueeze){
     return{pair,price,signalType:'WAIT',filters,session,news,regime,expiry,time:new Date()};
   }
@@ -961,12 +966,16 @@ function generateSignal(pair,candles,htf){
   buyC.volume=vScore;sellC.volume=vScore;
 
   // ── Session multiplier on final score ──
+  // Session reduces score slightly when market is closed/low liquidity
+  // Regime: non-tradeable regimes get a 0.8 penalty instead of full block
   const weights={htfTrend:18,emaStack:12,structure:13,regime:10,macd:10,rsiDiv:7,bb:5,liquiditySweep:15,fvg:10,orderBlock:12,candle:5,volume:3};
   const totalW=Object.values(weights).reduce((a,b)=>a+b,0);
+  const sessMult=session.multiplier;
+  const regimeMult=regime.tradeable?1.0:0.8;
 
   function computeScore(comps){
     let s=0;for(const[k,w]of Object.entries(weights)) s+=(comps[k]||0)*w;
-    return(s/totalW)*session.multiplier;
+    return(s/totalW)*sessMult*regimeMult;
   }
 
   let buyScore=computeScore(buyC),sellScore=computeScore(sellC);
