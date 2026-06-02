@@ -183,9 +183,10 @@
 </header>
 
 <div class="controls">
-  <div class="ctrl-group">
-    <label>API Key</label>
-    <input type="text" class="api-input" id="apiKey" placeholder="TwelveData key (optional — demo mode)">
+  <div class="ctrl-group" style="gap:6px;display:flex;align-items:center;flex-wrap:wrap;">
+    <label>Finnhub Key</label>
+    <input type="text" class="api-input" id="apiKey" placeholder="Paste free key from finnhub.io" style="width:200px;">
+    <button class="btn btn-start" style="padding:3px 10px;font-size:10px;" onclick="applyFinnhubKey()">⚡ CONNECT</button>
   </div>
   <div class="ctrl-group">
     <label>Pair</label>
@@ -222,7 +223,7 @@
 
 <main>
   <div class="left-panel">
-    <div class="disclaimer">⚠ EDUCATIONAL / PRACTICE ONLY — Live prices from ECB/free FX APIs (no key needed) match Quotex spot rates. Candle patterns are reconstructed from real prices. Not financial advice.</div>
+    <div class="disclaimer">⚠ EDUCATIONAL / PRACTICE ONLY — Live prices via Finnhub WebSocket (real-time tick data). Paste your free Finnhub key above and click CONNECT for real-time prices matching Quotex. Not financial advice.</div>
     <div>
       <div class="section-hdr">Live Prices · Signals · Regime</div>
       <div class="price-grid" id="priceGrid"></div>
@@ -283,90 +284,105 @@ const VOL={'EUR/USD':0.00018,'GBP/USD':0.00022,'USD/JPY':0.022,'AUD/USD':0.00016
 let simTrend={},simRegime={};
 PAIRS.forEach(p=>{simTrend[p]=0;simRegime[p]=0});
 
-/* ── Fetch real price from Frankfurter (ECB data, free, no CORS issues) ── */
-async function fetchFrankfurterPrice(pair){
-  try{
-    const [base,quote]=pair.split('/');
-    const url=`https://api.frankfurter.app/latest?from=${base}&to=${quote}`;
-    const r=await fetch(url,{signal:AbortSignal.timeout(5000)});
-    if(!r.ok) return null;
-    const d=await r.json();
-    const px=d.rates?.[quote];
-    return px&&+px>0?+px:null;
-  }catch{return null}
-}
+/* ═══════════════════════════════════════════════════════════════
+   FINNHUB WEBSOCKET — Real-time tick prices (same feed as live brokers)
+   Get a FREE key at finnhub.io (30 seconds, no credit card)
+═══════════════════════════════════════════════════════════════ */
+const FH_SYMBOLS={
+  'EUR/USD':'OANDA:EUR_USD',
+  'GBP/USD':'OANDA:GBP_USD',
+  'USD/JPY':'OANDA:USD_JPY',
+  'AUD/USD':'OANDA:AUD_USD',
+};
 
-/* ── Fetch real price from open.er-api.com (free, no key, good CORS) ── */
-async function fetchOpenERApi(pair){
-  try{
-    const [base,quote]=pair.split('/');
-    const url=`https://open.er-api.com/v6/latest/${base}`;
-    const r=await fetch(url,{signal:AbortSignal.timeout(5000)});
-    if(!r.ok) return null;
-    const d=await r.json();
-    return d.rates?.[quote]?+d.rates[quote]:null;
-  }catch{return null}
-}
+let fhSocket=null;
+let fhApiKey='';
 
-/* ── Fetch real price from freeforexapi.com (no key) ── */
-async function fetchFreeForexApi(pair){
-  try{
-    const sym=pair.replace('/','_');
-    const url=`https://www.freeforexapi.com/api/live?pairs=${sym}`;
-    const r=await fetch(url,{signal:AbortSignal.timeout(5000)});
-    if(!r.ok) return null;
-    const d=await r.json();
-    return d.rates?.[sym]?.rate?+d.rates[sym].rate:null;
-  }catch{return null}
-}
+function connectFinnhub(apiKey){
+  if(fhSocket){fhSocket.close();fhSocket=null;}
+  fhApiKey=apiKey;
+  setBadge('● CONNECTING...','var(--yellow)');
+  fhSocket=new WebSocket('wss://ws.finnhub.io?token='+apiKey);
 
-/* ── Master live price fetcher: tries sources in order ── */
-async function fetchLivePrice(pair){
-  // Try TwelveData first if key provided (most accurate, tick-level)
-  const key=document.getElementById('apiKey').value.trim();
-  if(key){
-    try{
-      const sym=pair.replace('/','');
-      const url=`https://api.twelvedata.com/price?symbol=${sym}&apikey=${key}`;
-      const r=await fetch(url,{signal:AbortSignal.timeout(5000)});
-      const d=await r.json();
-      if(d.price&&+d.price>0) return +d.price;
-    }catch{}
-  }
-  // Try free sources in parallel, take first non-null
-  const [f1,f2,f3]=await Promise.allSettled([
-    fetchFrankfurterPrice(pair),
-    fetchOpenERApi(pair),
-    fetchFreeForexApi(pair)
-  ]);
-  for(const res of [f1,f2,f3]){
-    if(res.status==='fulfilled'&&res.value&&res.value>0) return res.value;
-  }
-  // Final fallback: use realistic seed price (never return 1.0)
-  return SEED_PX[pair]||null;
-}
-
-/* ── Update all live prices ── */
-async function updateLivePrices(){
-  // Pre-seed simPx with realistic prices before fetching
-  PAIRS.forEach(p=>{if(!simPx[p]||simPx[p]===1.0) simPx[p]=SEED_PX[p]||simPx[p]});
-  const fetches=PAIRS.map(async p=>{
-    const px=await fetchLivePrice(p);
-    if(px&&px>0){
-      livePx[p]=px;
-      // Sync simulation anchor to real price
-      simPx[p]=px;
-    } else if(!livePx[p]){
-      // Use seed price as fallback if no live price ever fetched
-      livePx[p]=SEED_PX[p];
-      simPx[p]=SEED_PX[p];
-    }
+  fhSocket.addEventListener('open',()=>{
+    setBadge('● FINNHUB WS LIVE','var(--green)');
+    Object.values(FH_SYMBOLS).forEach(sym=>{
+      fhSocket.send(JSON.stringify({type:'subscribe',symbol:sym}));
+    });
   });
-  await Promise.allSettled(fetches);
-  // Show live price source badge
-  const hasReal=PAIRS.some(p=>livePx[p]&&Math.abs(livePx[p]-SEED_PX[p])>0.0001);
-  document.getElementById('priceSrcBadge').textContent=hasReal?'● LIVE PRICES':'● SEED PRICES';
-  document.getElementById('priceSrcBadge').style.color=hasReal?'var(--green)':'var(--yellow)';
+
+  fhSocket.addEventListener('message',(evt)=>{
+    try{
+      const msg=JSON.parse(evt.data);
+      if(msg.type==='trade'&&msg.data){
+        msg.data.forEach(trade=>{
+          const pair=Object.keys(FH_SYMBOLS).find(k=>FH_SYMBOLS[k]===trade.s);
+          if(pair&&trade.p){
+            const price=parseFloat(trade.p);
+            livePx[pair]=price;
+            simPx[pair]=price;
+            // Update candle history with tick
+            if(priceHistory[pair].length>0){
+              const last=priceHistory[pair][priceHistory[pair].length-1];
+              const now=Date.now();
+              if(now-last.time<60000){
+                last.close=price;
+                last.high=Math.max(last.high,price);
+                last.low=Math.min(last.low,price);
+              } else {
+                priceHistory[pair].push({open:last.close,high:price,low:price,close:price,volume:1500,time:now});
+                if(priceHistory[pair].length>260) priceHistory[pair].shift();
+              }
+            }
+          }
+        });
+      }
+    }catch(e){}
+  });
+
+  fhSocket.addEventListener('error',()=>{
+    setBadge('● WS ERROR — CHECK KEY','var(--red)');
+  });
+
+  fhSocket.addEventListener('close',()=>{
+    setBadge('● DISCONNECTED','var(--yellow)');
+    if(running) setTimeout(()=>connectFinnhub(fhApiKey),5000);
+  });
+}
+
+function setBadge(text,color){
+  const el=document.getElementById('priceSrcBadge');
+  el.textContent=text;el.style.color=color;
+}
+
+function applyFinnhubKey(){
+  const key=document.getElementById('apiKey').value.trim();
+  if(!key){alert('Paste your Finnhub API key.\nGet one free at finnhub.io');return;}
+  localStorage.setItem('fhKey',key);
+  connectFinnhub(key);
+}
+
+/* ── updateLivePrices: called by fetchAll, uses WS prices already in livePx ── */
+async function updateLivePrices(){
+  // Pre-seed with realistic prices
+  PAIRS.forEach(p=>{if(!simPx[p]||simPx[p]===1.0) simPx[p]=SEED_PX[p];});
+  // If WS is live, livePx is already being updated in real-time — nothing to do
+  // If no WS yet, try Frankfurter as fallback
+  if(!fhSocket||fhSocket.readyState!==WebSocket.OPEN){
+    for(const pair of PAIRS){
+      if(livePx[pair]) continue;
+      try{
+        const [base,quote]=pair.split('/');
+        const r=await fetch(`https://api.frankfurter.app/latest?from=${base}&to=${quote}`,{signal:AbortSignal.timeout(5000)});
+        const d=await r.json();
+        const px=d.rates?.[quote];
+        if(px&&+px>0){livePx[pair]=+px;simPx[pair]=+px;}
+        else{livePx[pair]=SEED_PX[pair];simPx[pair]=SEED_PX[pair];}
+      }catch{livePx[pair]=SEED_PX[pair];simPx[pair]=SEED_PX[pair];}
+    }
+    const hasFresh=PAIRS.some(p=>livePx[p]&&Math.abs(livePx[p]-SEED_PX[p])>0.0001);
+    setBadge(hasFresh?'● LIVE (REST)':'● SEED PRICES',hasFresh?'var(--accent)':'var(--yellow)');
+  }
 }
 
 /* ── Build realistic candle anchored to real price ── */
@@ -1303,6 +1319,14 @@ function startFetching(){
   if(running) return;running=true;
   document.getElementById('btnStart').disabled=true;document.getElementById('btnStop').disabled=false;
   document.getElementById('pulseDot').className='pulse live';document.getElementById('statusText').textContent='LIVE';
+  // Connect Finnhub WebSocket
+  const savedKey=localStorage.getItem('fhKey')||document.getElementById('apiKey').value.trim();
+  if(savedKey){
+    document.getElementById('apiKey').value=savedKey;
+    connectFinnhub(savedKey);
+  } else {
+    setBadge('● PASTE FINNHUB KEY & CLICK CONNECT','var(--yellow)');
+  }
   const tf=document.getElementById('interval').value;
   const refreshMs=tf==='1min'?10000:30000;
   countdown=refreshMs/1000;
@@ -1311,8 +1335,10 @@ function startFetching(){
 }
 function stopFetching(){
   running=false;clearInterval(fetchTimer);clearInterval(cdInterval);
+  if(fhSocket){fhSocket.close();fhSocket=null;}
   document.getElementById('btnStart').disabled=false;document.getElementById('btnStop').disabled=true;
   document.getElementById('pulseDot').className='pulse';document.getElementById('statusText').textContent='OFFLINE';document.getElementById('cdTimer').textContent='—';
+  setBadge('● OFFLINE','var(--text-dim)');
 }
 function clearSignals(){
   signals=[];buyCount=0;sellCount=0;strongCount=0;blockedCount=0;
@@ -1331,9 +1357,14 @@ document.getElementById('focusPair').addEventListener('change',()=>{
   const p=document.getElementById('focusPair').value,fp=p==='ALL'?PAIRS[0]:p;
   document.getElementById('indPairLabel').textContent=fp;renderIndicators(fp);
 });
+// Auto-restore saved Finnhub key
+window.addEventListener('load',()=>{
+  const saved=localStorage.getItem('fhKey');
+  if(saved){document.getElementById('apiKey').value=saved;setBadge('● KEY LOADED — CLICK START','var(--accent)');}
+});
 // Update session pill every minute even when stopped
 setInterval(updateSessionUI,60000);updateSessionUI();
-// Pre-fetch live prices immediately on page load so first render uses real prices
+// Pre-fetch live prices immediately on page load
 updateLivePrices();
 </script>
 </body>
