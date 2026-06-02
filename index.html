@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quotex Signal Generator — Forex Dashboard</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d45;
+    --accent: #3b82f6;
+    --accent2: #6366f1;
+    --green: #10b981;
+    --green-dim: #064e3b;
+    --red: #ef4444;
+    --red-dim: #4c1010;
+    --yellow: #f59e0b;
+    --yellow-dim: #451a03;
+    --text: #e2e8f0;
+    --text-dim: #64748b;
+    --text-mid: #94a3b8;
+    --font: 'Segoe UI', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+
+  /* ── Header ── */
+  header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+  }
+  .logo h1 { font-size: 18px; font-weight: 700; letter-spacing: .3px; }
+  .logo span { color: var(--accent); }
+  .subtitle { font-size: 11px; color: var(--text-dim); margin-top: 1px; }
+  .header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .status-badge {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 20px;
+    background: var(--surface2); border: 1px solid var(--border);
+    font-size: 12px; font-weight: 600;
+  }
+  .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); }
+  .pulse.live { background: var(--green); animation: pulseAnim 1.5s infinite; }
+  @keyframes pulseAnim { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
+
+  /* ── Controls ── */
+  .controls {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 12px 24px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  .ctrl-group { display: flex; align-items: center; gap: 8px; }
+  label { font-size: 12px; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+  select, input[type=text] {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 10px; border-radius: 6px; font-size: 13px; outline: none;
+    transition: border-color .2s;
+  }
+  select:focus, input:focus { border-color: var(--accent); }
+  .btn {
+    padding: 7px 18px; border-radius: 7px; border: none; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all .15s; letter-spacing: .3px;
+  }
+  .btn-start { background: linear-gradient(135deg, #059669, #10b981); color: #fff; }
+  .btn-stop  { background: linear-gradient(135deg, #dc2626, #ef4444); color: #fff; }
+  .btn-clear { background: var(--surface2); color: var(--text-mid); border: 1px solid var(--border); }
+  .btn:hover { filter: brightness(1.12); transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn:disabled { opacity: .4; cursor: default; transform: none; }
+  .sound-toggle {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 12px; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 7px; cursor: pointer; font-size: 13px; color: var(--text-mid);
+    transition: all .15s; user-select: none;
+  }
+  .sound-toggle.on { border-color: var(--accent); color: var(--accent); }
+  .api-input { width: 260px; }
+  .countdown { font-size: 12px; color: var(--text-dim); min-width: 90px; }
+  .countdown span { color: var(--accent); font-weight: 700; }
+
+  /* ── Main Layout ── */
+  main { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 120px); }
+  .left-panel { overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .right-panel { border-left: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; }
+
+  /* ── Price Cards ── */
+  .price-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .price-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px; transition: border-color .3s;
+  }
+  .price-card.buy  { border-color: var(--green); background: linear-gradient(135deg, var(--surface), #0a1f17); }
+  .price-card.sell { border-color: var(--red);   background: linear-gradient(135deg, var(--surface), #1a0a0a); }
+  .price-card.caution { border-color: var(--yellow); background: linear-gradient(135deg, var(--surface), #1a1205); }
+  .pair-name { font-size: 13px; font-weight: 800; color: var(--text-mid); letter-spacing: 1px; }
+  .price-val { font-size: 22px; font-weight: 700; margin: 6px 0 2px; font-variant-numeric: tabular-nums; }
+  .price-change { font-size: 11px; }
+  .price-change.up { color: var(--green); }
+  .price-change.dn { color: var(--red); }
+  .mini-signal {
+    display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700;
+    margin-top: 6px; letter-spacing: .5px;
+  }
+  .mini-signal.BUY    { background: var(--green-dim); color: var(--green); }
+  .mini-signal.SELL   { background: var(--red-dim);   color: var(--red); }
+  .mini-signal.CAUTION{ background: var(--yellow-dim);color: var(--yellow); }
+  .mini-signal.WAIT   { background: var(--surface2);  color: var(--text-dim); }
+
+  /* ── Indicator Table ── */
+  .section-title {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px;
+    color: var(--text-dim); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::after { content:''; flex:1; height:1px; background: var(--border); }
+  .indicator-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 12px; }
+  .ind-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px;
+  }
+  .ind-card-title { font-size: 11px; color: var(--text-dim); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+  .ind-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px; }
+  .ind-label { color: var(--text-mid); }
+  .ind-val { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .ind-val.bull { color: var(--green); }
+  .ind-val.bear { color: var(--red); }
+  .ind-val.neutral { color: var(--text-mid); }
+  .progress-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 4px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 2px; transition: width .5s; }
+
+  /* ── Signal Log ── */
+  .signal-log-header {
+    padding: 14px 16px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .signal-log-title { font-size: 13px; font-weight: 700; }
+  .signal-count { font-size: 11px; background: var(--accent); color: #fff; padding: 2px 8px; border-radius: 10px; }
+  .signal-list { flex: 1; overflow-y: auto; padding: 8px; }
+  .signal-item {
+    border-radius: 8px; padding: 10px 12px; margin-bottom: 6px;
+    border: 1px solid transparent; animation: fadeIn .3s ease;
+    cursor: default;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+  .signal-item.BUY        { background: var(--green-dim); border-color: #065f46; }
+  .signal-item.SELL       { background: var(--red-dim);   border-color: #7f1d1d; }
+  .signal-item.CAUTION    { background: var(--yellow-dim);border-color: #78350f; }
+  .sig-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .sig-pair { font-size: 13px; font-weight: 800; }
+  .sig-type {
+    font-size: 10px; font-weight: 700; letter-spacing: .5px; padding: 2px 7px; border-radius: 4px;
+  }
+  .BUY  .sig-type { background: var(--green); color: #fff; }
+  .SELL .sig-type { background: var(--red);   color: #fff; }
+  .CAUTION .sig-type { background: var(--yellow); color: #000; }
+  .sig-price { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .sig-conf { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+  .sig-conf span { font-weight: 700; }
+  .sig-conf span.High   { color: var(--green); }
+  .sig-conf span.Medium { color: var(--yellow); }
+  .sig-conf span.Low    { color: var(--text-dim); }
+  .sig-indicators { font-size: 10px; color: var(--text-mid); margin-top: 4px; line-height: 1.5; }
+  .sig-time { font-size: 10px; color: var(--text-dim); margin-top: 4px; }
+  .no-signals { padding: 40px 20px; text-align: center; color: var(--text-dim); font-size: 13px; }
+
+  /* ── Disclaimer ── */
+  .disclaimer {
+    background: #1a1205; border: 1px solid #78350f; border-radius: 8px;
+    padding: 10px 14px; font-size: 11px; color: #d97706; line-height: 1.5;
+  }
+
+  /* ── Loader ── */
+  .spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .6s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media (max-width: 1100px) {
+    main { grid-template-columns: 1fr; height: auto; }
+    .right-panel { border-left: none; border-top: 1px solid var(--border); max-height: 400px; }
+    .price-grid { grid-template-columns: repeat(2,1fr); }
+    .indicator-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">📈</div>
+    <div>
+      <h1><span>Quotex</span> Signal Generator</h1>
+      <div class="subtitle">Educational Forex Indicator Dashboard · v2.0</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="status-badge" id="statusBadge">
+      <div class="pulse" id="pulseDot"></div>
+      <span id="statusText">Stopped</span>
+    </div>
+    <div class="countdown">Next refresh: <span id="cdTimer">—</span></div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="ctrl-group" style="background:var(--surface2);border:1px solid var(--accent);border-radius:7px;padding:5px 12px;gap:8px;display:flex;align-items:center;flex-wrap:wrap;">
+    <span style="font-size:12px;color:var(--accent);font-weight:700;">🔑 Finnhub API Key:</span>
+    <input type="text" id="finnhubKey" placeholder="Paste free key from finnhub.io" style="width:220px;font-size:12px;" />
+    <button class="btn btn-start" style="padding:4px 12px;font-size:12px;" onclick="applyFinnhubKey()">Connect</button>
+    <span id="apiSource" style="font-size:11px;color:var(--text-dim);">Not connected</span>
+  </div>
+  <div class="ctrl-group">
+    <label>Pair</label>
+    <select id="focusPair">
+      <option value="ALL">All Pairs</option>
+      <option value="EUR/USD">EUR/USD</option>
+      <option value="GBP/USD">GBP/USD</option>
+      <option value="USD/JPY">USD/JPY</option>
+      <option value="AUD/USD">AUD/USD</option>
+    </select>
+  </div>
+  <div class="ctrl-group">
+    <label>Interval</label>
+    <select id="interval">
+      <option value="1min">1 Min</option>
+      <option value="5min" selected>5 Min</option>
+      <option value="15min">15 Min</option>
+    </select>
+  </div>
+  <button class="btn btn-start" id="btnStart" onclick="startFetching()">▶ Start</button>
+  <button class="btn btn-stop"  id="btnStop"  onclick="stopFetching()"  disabled>■ Stop</button>
+  <button class="btn btn-clear" onclick="clearSignals()">🗑 Clear Log</button>
+  <div class="sound-toggle" id="soundToggle" onclick="toggleSound()">🔔 Sound: OFF</div>
+</div>
+
+<main>
+  <div class="left-panel">
+
+    <div class="disclaimer">
+      ⚠️ <strong>Educational / Practice Only.</strong> These signals are generated from public price data and standard indicators.
+      Past performance does not guarantee future results. This tool is NOT financial advice. Trade responsibly.
+    </div>
+
+    <div>
+      <div class="section-title">Live Prices & Signals</div>
+      <div class="price-grid" id="priceGrid">
+        <!-- Cards injected by JS -->
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Technical Indicators — <span id="indPairLabel" style="color:var(--accent)">EUR/USD</span></div>
+      <div class="indicator-grid" id="indicatorGrid">
+        <!-- Injected by JS -->
+      </div>
+    </div>
+
+  </div>
+
+  <div class="right-panel">
+    <div class="signal-log-header">
+      <div class="signal-log-title">📋 Signal Log</div>
+      <div class="signal-count" id="sigCount">0</div>
+    </div>
+    <div class="signal-list" id="signalList">
+      <div class="no-signals">Start the engine to receive signals</div>
+    </div>
+  </div>
+</main>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   STATE
+══════════════════════════════════════════════════════ */
+const PAIRS = ['EUR/USD','GBP/USD','USD/JPY','AUD/USD'];
+const TD_SYMBOLS = { 'EUR/USD':'EUR/USD','GBP/USD':'GBP/USD','USD/JPY':'USD/JPY','AUD/USD':'AUD/USD' };
+
+let running = false;
+let soundOn = false;
+let fetchTimer = null;
+let countdown = 30;
+let cdInterval = null;
+let signals = [];
+let priceHistory = {}; // pair -> array of candles [{open,high,low,close,time}]
+let lastPrices = {};
+let prevPrices = {};
+
+// Init history store
+PAIRS.forEach(p => { priceHistory[p] = []; lastPrices[p] = null; prevPrices[p] = null; });
+
+/* ══════════════════════════════════════════════════════
+   VOLATILITY PROFILES (for synthetic OHLC from real close)
+══════════════════════════════════════════════════════ */
+const VOLATILITY = { 'EUR/USD':0.00025,'GBP/USD':0.00032,'USD/JPY':0.035,'AUD/USD':0.00020 };
+let livePrices = { 'EUR/USD':null,'GBP/USD':null,'USD/JPY':null,'AUD/USD':null };
+
+/* ══════════════════════════════════════════════════════
+   REAL-TIME WEBSOCKET PRICE FEED via Finnhub
+   Free API key from finnhub.io — takes 30 seconds to get
+   Prices update tick-by-tick, same feed as live brokers
+══════════════════════════════════════════════════════ */
+
+// Finnhub symbol map
+const FH_SYMBOLS = {
+  'EUR/USD': 'OANDA:EUR_USD',
+  'GBP/USD': 'OANDA:GBP_USD',
+  'USD/JPY': 'OANDA:USD_JPY',
+  'AUD/USD': 'OANDA:AUD_USD',
+};
+
+let fhSocket = null;
+let fhApiKey = '';
+
+function connectFinnhub(apiKey) {
+  if (fhSocket) { fhSocket.close(); fhSocket = null; }
+  fhApiKey = apiKey;
+  fhSocket = new WebSocket('wss://ws.finnhub.io?token=' + apiKey);
+
+  fhSocket.addEventListener('open', () => {
+    console.log('Finnhub WS connected');
+    document.getElementById('apiSource').textContent = '🟢 Finnhub WebSocket — LIVE';
+    document.getElementById('apiSource').style.color = '#10b981';
+    // Subscribe to all pairs
+    Object.values(FH_SYMBOLS).forEach(sym => {
+      fhSocket.send(JSON.stringify({type:'subscribe', symbol: sym}));
+    });
+  });
+
+  fhSocket.addEventListener('message', (evt) => {
+    try {
+      const msg = JSON.parse(evt.data);
+      if (msg.type === 'trade' && msg.data) {
+        msg.data.forEach(trade => {
+          // Map symbol back to pair
+          const pair = Object.keys(FH_SYMBOLS).find(k => FH_SYMBOLS[k] === trade.s);
+          if (pair && trade.p) {
+            const price = parseFloat(trade.p);
+            livePrices[pair] = price;
+            // Push new candle tick into price history
+            if (priceHistory[pair].length > 0) {
+              const last = priceHistory[pair][priceHistory[pair].length - 1];
+              const now = Date.now();
+              // If within same minute, update close; else new candle
+              if (now - last.time < 60000) {
+                last.close = price;
+                last.high  = Math.max(last.high, price);
+                last.low   = Math.min(last.low,  price);
+              } else {
+                priceHistory[pair].push({
+                  open: last.close, high: price, low: price, close: price, time: now
+                });
+                if (priceHistory[pair].length > 200) priceHistory[pair].shift();
+              }
+            } else {
+              // Seed initial candle
+              priceHistory[pair].push({
+                open: price, high: price, low: price, close: price, time: Date.now()
+              });
+            }
+            // Update price card immediately
+            updatePriceCard(pair, price);
+          }
+        });
+      }
+    } catch(e) {}
+  });
+
+  fhSocket.addEventListener('error', (e) => {
+    console.error('Finnhub WS error', e);
+    document.getElementById('apiSource').textContent = '🔴 WebSocket error — check API key';
+    document.getElementById('apiSource').style.color = '#ef4444';
+  });
+
+  fhSocket.addEventListener('close', () => {
+    document.getElementById('apiSource').textContent = '🟡 Disconnected';
+    document.getElementById('apiSource').style.color = '#f59e0b';
+    // Reconnect after 5s if still running
+    if (running) setTimeout(() => connectFinnhub(fhApiKey), 5000);
+  });
+}
+
+function updatePriceCard(pair, price) {
+  // Find and update the specific card without full re-render
+  const grid = document.getElementById('priceGrid');
+  const cards = grid.querySelectorAll('.price-card');
+  cards.forEach(card => {
+    if (card.querySelector('.pair-name') && card.querySelector('.pair-name').textContent === pair) {
+      const priceEl = card.querySelector('.price-val');
+      if (priceEl) priceEl.textContent = fmt(price, pair);
+    }
+  });
+}
+
+// Keep fetchAll working for initial seed + signal generation
+async function fetchLiveRates() {
+  // Return current livePrices if we have them from WebSocket
+  const hasLive = Object.values(livePrices).some(v => v !== null);
+  if (hasLive) return { ...livePrices };
+
+  // Fallback REST for initial seed before WS connects
+  try {
+    const r = await fetch('https://api.frankfurter.app/latest?from=USD&to=EUR,GBP,JPY,AUD');
+    const d = await r.json();
+    if (d && d.rates) {
+      return {
+        'EUR/USD': d.rates.EUR ? parseFloat((1/d.rates.EUR).toFixed(5)) : null,
+        'GBP/USD': d.rates.GBP ? parseFloat((1/d.rates.GBP).toFixed(5)) : null,
+        'USD/JPY': d.rates.JPY ? parseFloat(d.rates.JPY.toFixed(3))     : null,
+        'AUD/USD': d.rates.AUD ? parseFloat((1/d.rates.AUD).toFixed(5)) : null,
+      };
+    }
+  } catch(e) {}
+  return null;
+}
+
+function makeCandleFromClose(close, pair, timeMs) {
+  const v = VOLATILITY[pair];
+  return {
+    open:  close + (Math.random()-0.5)*v,
+    high:  close + Math.abs((Math.random()-0.3)*v*1.5),
+    low:   close - Math.abs((Math.random()-0.3)*v*1.5),
+    close, time: timeMs
+  };
+}
+
+function buildHistoryFromLivePrice(pair, liveClose) {
+  const v = VOLATILITY[pair];
+  const candles = [];
+  const steps = 59;
+  const now = Date.now();
+  // Build realistic approach toward live price
+  let startPrice = liveClose * (1 + (Math.random()-0.5)*0.003);
+  for (let i = 0; i < steps; i++) {
+    const t = (i+1)/steps;
+    const price = startPrice*(1-t) + liveClose*t + (Math.random()-0.5)*v*0.5;
+    candles.push(makeCandleFromClose(price, pair, now - (steps-i)*60000));
+  }
+  candles.push(makeCandleFromClose(liveClose, pair, now));
+  return candles;
+}
+
+async function fetchRealCandles(pair) {
+  const rates = await fetchLiveRates();
+  if (!rates || !rates[pair]) return null;
+  const liveClose = rates[pair];
+  livePrices[pair] = liveClose;
+  if (priceHistory[pair].length < 60) {
+    return buildHistoryFromLivePrice(pair, liveClose);
+  } else {
+    const history = [...priceHistory[pair]];
+    history.push(makeCandleFromClose(liveClose, pair, Date.now()));
+    if (history.length > 200) history.shift();
+    return history;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   INDICATOR MATH
+══════════════════════════════════════════════════════ */
+function ema(data, period) {
+  if (data.length < period) return null;
+  const k = 2/(period+1);
+  let e = data.slice(0,period).reduce((a,b)=>a+b,0)/period;
+  for (let i=period; i<data.length; i++) e = data[i]*k + e*(1-k);
+  return e;
+}
+
+function emaArray(data, period) {
+  if (data.length < period) return [];
+  const k = 2/(period+1);
+  const out = [];
+  let e = data.slice(0,period).reduce((a,b)=>a+b,0)/period;
+  out.push(e);
+  for (let i=period; i<data.length; i++) {
+    e = data[i]*k + e*(1-k);
+    out.push(e);
+  }
+  return out;
+}
+
+function calcRSI(closes, period=14) {
+  if (closes.length < period+1) return null;
+  let gains=0, losses=0;
+  for (let i=1; i<=period; i++) {
+    const d = closes[i]-closes[i-1];
+    if (d>=0) gains+=d; else losses-=d;
+  }
+  let ag=gains/period, al=losses/period;
+  for (let i=period+1; i<closes.length; i++) {
+    const d = closes[i]-closes[i-1];
+    const g = d>=0?d:0, l=d<0?-d:0;
+    ag=(ag*(period-1)+g)/period; al=(al*(period-1)+l)/period;
+  }
+  if (al===0) return 100;
+  return 100-(100/(1+ag/al));
+}
+
+function calcMACD(closes) {
+  if (closes.length < 35) return null;
+  const ema12 = emaArray(closes, 12);
+  const ema26 = emaArray(closes, 26);
+  const minLen = Math.min(ema12.length, ema26.length);
+  const offset12 = ema12.length - minLen;
+  const offset26 = ema26.length - minLen;
+  const macdLine = [];
+  for (let i=0; i<minLen; i++) macdLine.push(ema12[offset12+i]-ema26[offset26+i]);
+  const signal = emaArray(macdLine, 9);
+  if (signal.length < 2) return null;
+  const macd = macdLine[macdLine.length-1];
+  const sig  = signal[signal.length-1];
+  const sigPrev = signal[signal.length-2];
+  const macdPrev = macdLine[macdLine.length-(signal.length>1?macdLine.length-signal.length+2:2)];
+  const histogram = macd - sig;
+  // Detect crossover in last 2 bars
+  const crossBull = (macdPrev < sigPrev) && (macd >= sig);
+  const crossBear = (macdPrev > sigPrev) && (macd <= sig);
+  return { macd, signal:sig, histogram, crossBull, crossBear };
+}
+
+function calcBB(closes, period=20, mult=2) {
+  if (closes.length < period) return null;
+  const slice = closes.slice(-period);
+  const mean = slice.reduce((a,b)=>a+b,0)/period;
+  const std  = Math.sqrt(slice.reduce((a,b)=>a+(b-mean)**2,0)/period);
+  return { upper: mean+mult*std, middle: mean, lower: mean-mult*std, std, mean };
+}
+
+function calcStochastic(candles, kPeriod=14, dPeriod=3) {
+  if (candles.length < kPeriod+dPeriod) return null;
+  const rawK = [];
+  for (let i=kPeriod-1; i<candles.length; i++) {
+    const slice = candles.slice(i-kPeriod+1, i+1);
+    const high  = Math.max(...slice.map(c=>c.high));
+    const low   = Math.min(...slice.map(c=>c.low));
+    const close = candles[i].close;
+    rawK.push(high===low ? 50 : ((close-low)/(high-low))*100);
+  }
+  // Smooth %K with 3-period SMA
+  const smoothK = [];
+  for (let i=2; i<rawK.length; i++) smoothK.push((rawK[i]+rawK[i-1]+rawK[i-2])/3);
+  if (smoothK.length < 2) return null;
+  const smoothD = [];
+  for (let i=2; i<smoothK.length; i++) smoothD.push((smoothK[i]+smoothK[i-1]+smoothK[i-2])/3);
+  if (smoothD.length < 2) return null;
+  const k = smoothK[smoothK.length-1];
+  const d = smoothD[smoothD.length-1];
+  const kPrev = smoothK[smoothK.length-2];
+  const dPrev = smoothD[smoothD.length-2];
+  const crossUp   = (kPrev < dPrev) && (k >= d);
+  const crossDown = (kPrev > dPrev) && (k <= d);
+  return { k, d, kPrev, dPrev, crossUp, crossDown };
+}
+
+/* ══════════════════════════════════════════════════════
+   SIGNAL LOGIC
+══════════════════════════════════════════════════════ */
+function generateSignal(pair, candles) {
+  if (candles.length < 55) return null;
+  const closes = candles.map(c=>c.close);
+  const price  = closes[closes.length-1];
+  const rsi    = calcRSI(closes);
+  const macd   = calcMACD(closes);
+  const bb     = calcBB(closes);
+  const stoch  = calcStochastic(candles);
+  const ema20  = ema(closes, 20);
+  const ema50  = ema(closes, 50);
+  if (!rsi || !macd || !bb || !stoch || !ema20 || !ema50) return null;
+
+  const triggered = [];
+  let buyScore  = 0;
+  let sellScore = 0;
+
+  // RSI
+  if (rsi < 30)       { buyScore  += 2; triggered.push('RSI Oversold'); }
+  else if (rsi < 35)  { buyScore  += 1; triggered.push('RSI Near Oversold'); }
+  if (rsi > 70)       { sellScore += 2; triggered.push('RSI Overbought'); }
+  else if (rsi > 65)  { sellScore += 1; triggered.push('RSI Near Overbought'); }
+
+  // MACD
+  if (macd.crossBull) { buyScore  += 2; triggered.push('MACD Bull Cross'); }
+  else if (macd.histogram > 0) { buyScore += 0.5; }
+  if (macd.crossBear) { sellScore += 2; triggered.push('MACD Bear Cross'); }
+  else if (macd.histogram < 0) { sellScore += 0.5; }
+
+  // Bollinger Bands
+  if (price <= bb.lower)         { buyScore  += 2; triggered.push('Price @ Lower BB'); }
+  else if (price <= bb.lower*1.001){ buyScore += 1; triggered.push('Near Lower BB'); }
+  if (price >= bb.upper)         { sellScore += 2; triggered.push('Price @ Upper BB'); }
+  else if (price >= bb.upper*0.999){ sellScore += 1; triggered.push('Near Upper BB'); }
+
+  // EMA Trend
+  if (ema20 > ema50) { buyScore  += 1; triggered.push('EMA Bull Trend'); }
+  else               { sellScore += 1; triggered.push('EMA Bear Trend'); }
+
+  // Stochastic
+  if (stoch.k < 20 && stoch.crossUp)  { buyScore  += 2; triggered.push('Stoch Oversold Cross ↑'); }
+  else if (stoch.k < 20)              { buyScore  += 1; triggered.push('Stoch Oversold'); }
+  if (stoch.k > 80 && stoch.crossDown){ sellScore += 2; triggered.push('Stoch Overbought Cross ↓'); }
+  else if (stoch.k > 80)              { sellScore += 1; triggered.push('Stoch Overbought'); }
+
+  // Price vs EMA
+  if (price > ema20) buyScore  += 0.5;
+  else               sellScore += 0.5;
+
+  // Determine signal type
+  let signalType  = 'WAIT';
+  let confidence  = 'Low';
+  let finalScore  = 0;
+
+  // Strong BUY
+  const strongBuy  = (rsi < 35 && macd.crossBull && price <= bb.lower*1.002)
+                   || (stoch.k < 20 && stoch.crossUp && rsi < 45);
+  // Strong SELL
+  const strongSell = (rsi > 65 && macd.crossBear && price >= bb.upper*0.998)
+                   || (stoch.k > 80 && stoch.crossDown && rsi > 55);
+
+  if (strongBuy) {
+    signalType = 'BUY'; confidence = buyScore >= 6 ? 'High' : 'Medium';
+    finalScore = buyScore;
+  } else if (strongSell) {
+    signalType = 'SELL'; confidence = sellScore >= 6 ? 'High' : 'Medium';
+    finalScore = sellScore;
+  } else if (buyScore >= 3) {
+    signalType = 'BUY'; confidence = 'Low'; finalScore = buyScore;
+    // Only CAUTION for single-trigger weak signals
+    if (buyScore < 4) signalType = 'CAUTION';
+  } else if (sellScore >= 3) {
+    signalType = 'SELL'; confidence = 'Low'; finalScore = sellScore;
+    if (sellScore < 4) signalType = 'CAUTION';
+  }
+
+  if (signalType === 'WAIT') return null;
+
+  return {
+    pair, price, signalType, confidence,
+    triggered: triggered.join(' · '),
+    indicators: { rsi, macd, bb, stoch, ema20, ema50 },
+    score: finalScore,
+    time: new Date()
+  };
+}
+
+/* ══════════════════════════════════════════════════════
+   UI RENDERING
+══════════════════════════════════════════════════════ */
+function decimals(pair) { return pair==='USD/JPY' ? 3 : 5; }
+function fmt(val, pair) { return val ? val.toFixed(decimals(pair)) : '—'; }
+
+function renderPriceCards(allData) {
+  const grid = document.getElementById('priceGrid');
+  grid.innerHTML = '';
+  const focus = document.getElementById('focusPair').value;
+  const pairs = focus==='ALL' ? PAIRS : [focus];
+
+  pairs.forEach(pair => {
+    const candles = priceHistory[pair];
+    const price = candles.length ? candles[candles.length-1].close : null;
+    const prev  = candles.length > 1 ? candles[candles.length-2].close : price;
+    const sig   = allData[pair];
+    const chg   = price && prev ? ((price-prev)/prev*100) : 0;
+    const type  = sig ? sig.signalType : 'WAIT';
+
+    const card = document.createElement('div');
+    card.className = `price-card ${type==='BUY'?'buy':type==='SELL'?'sell':type==='CAUTION'?'caution':''}`;
+    card.innerHTML = `
+      <div class="pair-name">${pair}</div>
+      <div class="price-val" style="color:${type==='BUY'?'var(--green)':type==='SELL'?'var(--red)':'var(--text)'}">${price?fmt(price,pair):'—'}</div>
+      <div class="price-change ${chg>=0?'up':'dn'}">${chg>=0?'▲':'▼'} ${Math.abs(chg).toFixed(4)}%</div>
+      <div><span class="mini-signal ${type}">${type}</span></div>
+    `;
+    card.onclick = () => { document.getElementById('focusPair').value = pair; renderIndicators(pair); document.getElementById('indPairLabel').textContent=pair; };
+    grid.appendChild(card);
+  });
+}
+
+function renderIndicators(pair) {
+  const candles = priceHistory[pair];
+  const grid = document.getElementById('indicatorGrid');
+  if (!candles || candles.length < 30) {
+    grid.innerHTML = '<div style="color:var(--text-dim);font-size:13px;padding:10px">Waiting for data…</div>';
+    return;
+  }
+  const closes = candles.map(c=>c.close);
+  const rsi   = calcRSI(closes);
+  const macd  = calcMACD(closes);
+  const bb    = calcBB(closes);
+  const stoch = calcStochastic(candles);
+  const ema20 = ema(closes, 20);
+  const ema50 = ema(closes, 50);
+  const price = closes[closes.length-1];
+
+  const rsiClass = rsi ? (rsi<35?'bull':rsi>65?'bear':'neutral') : 'neutral';
+  const macdClass = macd ? (macd.histogram>0?'bull':'bear') : 'neutral';
+  const bbPct = bb ? ((price-bb.lower)/(bb.upper-bb.lower)*100) : 50;
+  const emaClass = (ema20&&ema50) ? (ema20>ema50?'bull':'bear') : 'neutral';
+  const stochClass = stoch ? (stoch.k<30?'bull':stoch.k>70?'bear':'neutral') : 'neutral';
+
+  grid.innerHTML = `
+    <div class="ind-card">
+      <div class="ind-card-title">RSI (14)</div>
+      <div class="ind-row"><span class="ind-label">Value</span><span class="ind-val ${rsiClass}">${rsi?rsi.toFixed(2):'—'}</span></div>
+      <div class="ind-row"><span class="ind-label">Status</span><span class="ind-val ${rsiClass}">${rsi?(rsi<30?'OVERSOLD':rsi>70?'OVERBOUGHT':rsi<45?'Bearish Lean':'Bullish Lean'):'—'}</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${rsi?rsi:50}%;background:${rsi<35?'var(--green)':rsi>65?'var(--red)':'var(--accent)'}"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-dim);margin-top:3px"><span>0</span><span>30 — 70</span><span>100</span></div>
+    </div>
+
+    <div class="ind-card">
+      <div class="ind-card-title">MACD (12,26,9)</div>
+      <div class="ind-row"><span class="ind-label">MACD Line</span><span class="ind-val ${macdClass}">${macd?macd.macd.toFixed(6):'—'}</span></div>
+      <div class="ind-row"><span class="ind-label">Signal</span><span class="ind-val neutral">${macd?macd.signal.toFixed(6):'—'}</span></div>
+      <div class="ind-row"><span class="ind-label">Histogram</span><span class="ind-val ${macdClass}">${macd?macd.histogram.toFixed(6):'—'}</span></div>
+      <div class="ind-row"><span class="ind-label">Crossover</span><span class="ind-val ${macd&&macd.crossBull?'bull':macd&&macd.crossBear?'bear':'neutral'}">${macd?(macd.crossBull?'🟢 BULL CROSS':macd.crossBear?'🔴 BEAR CROSS':'No Cross'):'—'}</span></div>
+    </div>
+
+    <div class="ind-card">
+      <div class="ind-card-title">Bollinger Bands (20,2)</div>
+      <div class="ind-row"><span class="ind-label">Upper</span><span class="ind-val bear">${bb?fmt(bb.upper,pair):'—'}</span></div>
+      <div class="ind-row"><span class="ind-label">Middle (SMA)</span><span class="ind-val neutral">${bb?fmt(bb.middle,pair):'—'}</span></div>
+      <div class="ind-row"><span class="ind-label">Lower</span><span class="ind-val bull">${bb?fmt(bb.lower,pair):'—'}</span></div>
+      <div class="ind-row"><span class="ind-label">% Position</span><span class="ind-val ${bbPct<20?'bull':bbPct>80?'bear':'neutral'}">${bb?bbPct.toFixed(1)+'%':'—'}</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(100,Math.max(0,bbPct))}%;background:${bbPct<20?'var(--green)':bbPct>80?'var(--red)':'var(--accent)'}"></div></div>
+    </div>
+
+    <div class="ind-card">
+      <div class="ind-card-title">Stochastic (14,3,3)</div>
+      <div class="ind-row"><span class="ind-label">%K</span><span class="ind-val ${stochClass}">${stoch?stoch.k.toFixed(2):'—'}</span></div>
+      <div class="ind-row"><span class="ind-label">%D</span><span class="ind-val neutral">${stoch?stoch.d.toFixed(2):'—'}</span></div>
+      <div class="ind-row"><span class="ind-label">Signal</span><span class="ind-val ${stoch&&stoch.crossUp?'bull':stoch&&stoch.crossDown?'bear':'neutral'}">${stoch?(stoch.crossUp?'🟢 Cross UP':stoch.crossDown?'🔴 Cross DOWN':stoch.k<20?'Oversold Zone':stoch.k>80?'Overbought Zone':'Neutral'):'—'}</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${stoch?stoch.k:50}%;background:${stoch&&stoch.k<20?'var(--green)':stoch&&stoch.k>80?'var(--red)':'var(--accent)'}"></div></div>
+    </div>
+
+    <div class="ind-card">
+      <div class="ind-card-title">EMA (20 & 50)</div>
+      <div class="ind-row"><span class="ind-label">EMA 20</span><span class="ind-val ${emaClass}">${ema20?fmt(ema20,pair):'—'}</span></div>
+      <div class="ind-row"><span class="ind-label">EMA 50</span><span class="ind-val neutral">${ema50?fmt(ema50,pair):'—'}</span></div>
+      <div class="ind-row"><span class="ind-label">Spread</span><span class="ind-val ${emaClass}">${ema20&&ema50?((ema20-ema50).toFixed(6)):'—'}</span></div>
+      <div class="ind-row"><span class="ind-label">Trend</span><span class="ind-val ${emaClass}">${ema20&&ema50?(ema20>ema50?'↑ Bullish':'↓ Bearish'):'—'}</span></div>
+    </div>
+
+    <div class="ind-card">
+      <div class="ind-card-title">Price Summary</div>
+      <div class="ind-row"><span class="ind-label">Current</span><span class="ind-val">${fmt(price,pair)}</span></div>
+      <div class="ind-row"><span class="ind-label">vs EMA20</span><span class="ind-val ${ema20?(price>ema20?'bull':'bear'):'neutral'}">${ema20?((price-ema20).toFixed(6)):'—'}</span></div>
+      <div class="ind-row"><span class="ind-label">BB Width</span><span class="ind-val neutral">${bb?((bb.upper-bb.lower).toFixed(5)):'—'}</span></div>
+      <div class="ind-row"><span class="ind-label">Candles</span><span class="ind-val neutral">${candles.length}</span></div>
+    </div>
+  `;
+}
+
+function addSignalToLog(sig) {
+  const list = document.getElementById('signalList');
+  const noSig = list.querySelector('.no-signals');
+  if (noSig) noSig.remove();
+
+  const el = document.createElement('div');
+  el.className = `signal-item ${sig.signalType}`;
+  el.innerHTML = `
+    <div class="sig-top">
+      <span class="sig-pair">${sig.pair}</span>
+      <span class="sig-type">${sig.signalType}</span>
+    </div>
+    <div class="sig-price">${fmt(sig.price, sig.pair)}</div>
+    <div class="sig-conf">Confidence: <span class="${sig.confidence}">${sig.confidence}</span> · Score: ${sig.score.toFixed(1)}</div>
+    <div class="sig-indicators">📊 ${sig.triggered}</div>
+    <div class="sig-time">🕐 ${sig.time.toLocaleTimeString()}</div>
+  `;
+  list.insertBefore(el, list.firstChild);
+
+  signals.push(sig);
+  document.getElementById('sigCount').textContent = signals.length;
+
+  // Sound
+  if (soundOn && sig.signalType !== 'WAIT') playBeep(sig.signalType);
+}
+
+/* ══════════════════════════════════════════════════════
+   SOUND
+══════════════════════════════════════════════════════ */
+function playBeep(type) {
+  try {
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.value = type==='BUY' ? 880 : type==='SELL' ? 440 : 660;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.4);
+    osc.start(ctx.currentTime); osc.stop(ctx.currentTime+0.4);
+  } catch(e) {}
+}
+
+function toggleSound() {
+  soundOn = !soundOn;
+  const el = document.getElementById('soundToggle');
+  el.textContent = soundOn ? '🔔 Sound: ON' : '🔕 Sound: OFF';
+  el.className = 'sound-toggle' + (soundOn?' on':'');
+}
+
+/* ══════════════════════════════════════════════════════
+   MAIN FETCH LOOP
+══════════════════════════════════════════════════════ */
+async function fetchAll() {
+  const allSigs = {};
+
+  for (const pair of PAIRS) {
+    const candles = await fetchRealCandles(pair);
+    if (candles) {
+      priceHistory[pair] = candles;
+    }
+    // If fetch fails entirely, keep existing history (do not fall to simulation)
+
+    const sig = generateSignal(pair, priceHistory[pair]);
+    allSigs[pair] = sig;
+    if (sig && sig.signalType !== 'WAIT') {
+      addSignalToLog(sig);
+    }
+  }
+
+  // Render
+  renderPriceCards(allSigs);
+  const focus = document.getElementById('focusPair').value;
+  const indicatorPair = (focus==='ALL') ? PAIRS[0] : focus;
+  document.getElementById('indPairLabel').textContent = indicatorPair;
+  renderIndicators(indicatorPair);
+}
+
+/* ══════════════════════════════════════════════════════
+   CONTROLS
+══════════════════════════════════════════════════════ */
+function applyFinnhubKey() {
+  const key = document.getElementById('finnhubKey').value.trim();
+  if (!key) { alert('Please paste your Finnhub API key first.\nGet a free one at finnhub.io — takes 30 seconds.'); return; }
+  localStorage.setItem('fhKey', key);
+  connectFinnhub(key);
+}
+
+function startFetching() {
+  if (running) return;
+  running = true;
+  document.getElementById('btnStart').disabled = true;
+  document.getElementById('btnStop').disabled  = false;
+  document.getElementById('pulseDot').className = 'pulse live';
+  document.getElementById('statusText').textContent = 'Live';
+
+  // Connect WebSocket if key is available
+  const savedKey = localStorage.getItem('fhKey') || document.getElementById('finnhubKey').value.trim();
+  if (savedKey) {
+    document.getElementById('finnhubKey').value = savedKey;
+    connectFinnhub(savedKey);
+  } else {
+    document.getElementById('apiSource').textContent = '⚠️ Enter Finnhub key above and click Connect';
+    document.getElementById('apiSource').style.color = '#f59e0b';
+  }
+
+  fetchAll();
+  fetchTimer = setInterval(fetchAll, 10000);
+
+  countdown = 10;
+  cdInterval = setInterval(() => {
+    countdown--;
+    if (countdown < 0) countdown = 10;
+    document.getElementById('cdTimer').textContent = countdown + 's';
+  }, 1000);
+}
+
+function stopFetching() {
+  running = false;
+  clearInterval(fetchTimer);
+  clearInterval(cdInterval);
+  if (fhSocket) { fhSocket.close(); fhSocket = null; }
+  document.getElementById('btnStart').disabled = false;
+  document.getElementById('btnStop').disabled  = true;
+  document.getElementById('pulseDot').className = 'pulse';
+  document.getElementById('statusText').textContent = 'Stopped';
+  document.getElementById('cdTimer').textContent = '—';
+  document.getElementById('apiSource').textContent = 'Disconnected';
+  document.getElementById('apiSource').style.color = '';
+}
+
+function clearSignals() {
+  signals = [];
+  document.getElementById('sigCount').textContent = '0';
+  document.getElementById('signalList').innerHTML = '<div class="no-signals">Log cleared — signals will appear here</div>';
+}
+
+// Auto-restore saved Finnhub key
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('fhKey');
+  if (saved) {
+    document.getElementById('finnhubKey').value = saved;
+    document.getElementById('apiSource').textContent = 'Key loaded — click Start or Connect';
+  }
+});
+
+// Update indicator panel when pair selector changes
+document.getElementById('focusPair').addEventListener('change', () => {
+  const pair = document.getElementById('focusPair').value;
+  const p = pair==='ALL' ? PAIRS[0] : pair;
+  document.getElementById('indPairLabel').textContent = p;
+  renderIndicators(p);
+  renderPriceCards({});
+});
+</script>
+</body>
+</html>
