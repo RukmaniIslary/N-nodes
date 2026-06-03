@@ -307,9 +307,46 @@
     .ind-grid { grid-template-columns: repeat(2,1fr); }
     .struct-grid { grid-template-columns: 1fr; }
   }
+  @media (max-width: 768px) {
+    header {
+      height: auto;
+      flex-wrap: wrap;
+      padding: 10px 12px;
+      gap: 8px;
+    }
+    .header-right {
+      flex-wrap: wrap;
+      gap: 6px;
+      width: 100%;
+    }
+    .cd-badge {
+      font-size: 10px;
+    }
+    .controls {
+      padding: 8px 12px;
+      gap: 8px;
+    }
+    .api-group {
+      width: 100%;
+      flex-wrap: wrap;
+    }
+    .api-key-input {
+      width: 100%;
+      min-width: 0;
+      flex: 1;
+    }
+    .ctrl-sep { display: none; }
+    .ctrl-group { flex-wrap: wrap; }
+    .btn, .sound-btn { font-size: 10px; padding: 6px 10px; }
+  }
   @media (max-width: 600px) {
     .price-grid { grid-template-columns: repeat(2,1fr); }
     .ind-grid { grid-template-columns: 1fr; }
+    .logo-text h1 { font-size: 13px; }
+    .logo-text p  { font-size: 9px; }
+    .status-pill  { font-size: 10px; padding: 4px 10px; }
+    .left { padding: 10px; }
+    .pc-price { font-size: 16px; }
   }
 </style>
 </head>
