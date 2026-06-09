@@ -14,7 +14,7 @@ export default function Particles() {
 
   return (
     <Points
-      positions={particles.flat()}
+      positions={new Float32Array(particles.flat())}
       stride={3}
     >
       <PointMaterial

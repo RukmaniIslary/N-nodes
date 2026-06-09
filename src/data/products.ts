@@ -2,7 +2,7 @@ import { Product } from "@/types/product";
 
 export const products: Product[] = [
   {
-    id:1,
+    id:"1",
     name:"Nike Air Jordan 1",
     price:200,
     image:"/shoes/jordan1.png",
@@ -11,7 +11,7 @@ export const products: Product[] = [
     category:"Basketball"
   },
   {
-    id:2,
+    id:"2",
     name:"Nike Dunk Low",
     price:200,
     image:"/shoes/dunklow.png",
@@ -20,7 +20,7 @@ export const products: Product[] = [
     category:"Lifestyle"
   },
   {
-    id:3,
+    id:"3",
     name:"Nike Air Force 1",
     price:200,
     image:"/shoes/airforce1.png",
@@ -29,7 +29,7 @@ export const products: Product[] = [
     category:"Lifestyle"
   },
   {
-    id:4,
+    id:"4",
     name:"Nike Jordan 4",
     price:200,
     image:"/shoes/jordan4.png",
@@ -38,7 +38,7 @@ export const products: Product[] = [
     category:"Basketball"
   },
   {
-    id:5,
+    id:"5",
     name:"Nike Pegasus",
     price:200,
     image:"/shoes/pegasus.png",
@@ -47,7 +47,7 @@ export const products: Product[] = [
     category:"Running"
   },
   {
-    id:6,
+    id:"6",
     name:"Nike React Infinity",
     price:200,
     image:"/shoes/react.png",
@@ -56,7 +56,7 @@ export const products: Product[] = [
     category:"Running"
   },
   {
-    id:7,
+    id:"7",
     name:"Nike ZoomX Vaporfly",
     price:200,
     image:"/shoes/vaporfly.png",
@@ -65,7 +65,7 @@ export const products: Product[] = [
     category:"Running"
   },
   {
-    id:8,
+    id:"8",
     name:"Nike SB Dunk",
     price:200,
     image:"/shoes/sbdunk.png",

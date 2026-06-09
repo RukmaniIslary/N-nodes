@@ -98,7 +98,7 @@ export default async function EditProductPage({
 
         <input
           name="slug"
-          defaultValue={product.slug}
+          defaultValue={product.slug ?? ""}
           className="
           glass
           p-4
