@@ -16,10 +16,16 @@ export async function POST(
 ) {
   const body = await request.json();
 
+  const slug = body.name
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "");
+
   const product =
     await prisma.product.create({
       data: {
         name: body.name,
+        slug,
         description: body.description,
         price: body.price,
         stock: body.stock,

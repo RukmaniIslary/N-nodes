@@ -8,43 +8,43 @@ datasource db {
 }
 
 model User {
-  id        String @id @default(cuid())
+  id String @id @default(cuid())
 
-  name      String?
+  name String?
 
-  email     String @unique
+  email String @unique
 
-  password  String
+  password String
 
-  role      Role @default(USER)
+  role Role @default(USER)
 
-  orders    Order[]
+  orders Order[]
 
-  wishlist  Wishlist[]
+  wishlist Wishlist[]
 
   createdAt DateTime @default(now())
 }
 
 model Product {
-  id          String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  name        String
-  slug        String   @unique
+  name String
+  slug String @unique
 
   description String
 
-  image       String
+  image String
 
-  price       Float
+  price Float
 
-  stock       Int
+  stock Int
 
-  category    String
+  category String
 
-  featured    Boolean  @default(false)
+  featured Boolean @default(false)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Order {
@@ -63,13 +63,13 @@ model Order {
   createdAt DateTime @default(now())
 }
 
-mmodel Wishlist {
-
-  id        String @id @default(cuid())
+model Wishlist {
+  id String @id @default(cuid())
 
   userId    String
-
   productId String
+
+  user User @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
 }
@@ -88,14 +88,13 @@ enum OrderStatus {
 }
 
 model CartItem {
+  id String @id @default(cuid())
 
-  id        String @id @default(cuid())
-
-  userId    String
+  userId String
 
   productId String
 
-  quantity  Int @default(1)
+  quantity Int @default(1)
 
   createdAt DateTime @default(now())
 }

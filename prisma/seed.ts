@@ -7,6 +7,7 @@ async function main() {
     data: [
       {
         name: "Nike Air Jordan 1",
+        slug: "nike-air-jordan-1",
         description: "Premium basketball sneaker",
         price: 170,
         image: "/public/shoes/jordan1.png",
@@ -15,6 +16,7 @@ async function main() {
       },
       {
         name: "Nike Dunk Low",
+        slug: "nike-dunk-low",
         description: "Streetwear icon",
         price: 170,
         image: "/public/shoes/dunklow.png",
@@ -23,6 +25,7 @@ async function main() {
       },
       {
         name: "Nike Air Force 1",
+        slug: "nike-air-force-1",
         description: "Classic everyday sneaker",
         price: 170,
         image: "/public/shoes/airforce1.png",
@@ -31,6 +34,7 @@ async function main() {
       },
       {
         name: "Nike Jordan 4",
+        slug: "nike-jordan-4",
         description: "Luxury retro sneaker",
         price: 170,
         image: "/public/shoes/jordan4.png",
@@ -39,6 +43,7 @@ async function main() {
       },
       {
         name: "Nike Pegasus",
+        slug: "nike-pegasus",
         description: "Running performance shoe",
         price: 170,
         image: "/public/shoes/pegasus.png",
