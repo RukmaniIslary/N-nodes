@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { Product } from "@prisma/client";
+
 async function deleteProduct(
   formData: FormData
 ) {
@@ -141,7 +143,7 @@ export default async function ProductsPage({
 
           <tbody>
 
-            {products.map((product) => (
+            {products.map((product: any) => (
 
               <tr
                 key={product.id}
