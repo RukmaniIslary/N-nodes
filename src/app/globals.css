@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+:root {
+  --background: #050505;
+  --foreground: #ffffff;
+
+  --card: rgba(255,255,255,0.05);
+
+  --glass: rgba(255,255,255,0.08);
+
+  --red-primary: #ff1744;
+  --red-secondary: #ff4569;
+
+  --pink: #ff4db8;
+
+  --blue: #4c6fff;
+}
+
+body {
+  background:
+    radial-gradient(circle at top right,#ff174420,transparent 30%),
+    radial-gradient(circle at bottom left,#ff4db820,transparent 30%),
+    #050505;
+
+  color:white;
+  overflow-x:hidden;
+}
+
+.glass {
+  background: rgba(255,255,255,0.05);
+
+  backdrop-filter: blur(20px);
+
+  border: 1px solid rgba(255,255,255,0.08);
+
+  box-shadow:
+    0 8px 32px rgba(0,0,0,.4);
+}
+
+.red-glow {
+  box-shadow:
+  0 0 20px rgba(255,23,68,.4),
+  0 0 50px rgba(255,23,68,.2);
+}
