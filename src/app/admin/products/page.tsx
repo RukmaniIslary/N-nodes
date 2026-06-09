@@ -2,8 +2,6 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { Product } from "@prisma/client";
-
 async function deleteProduct(
   formData: FormData
 ) {
