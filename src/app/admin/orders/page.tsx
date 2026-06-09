@@ -44,7 +44,7 @@ export default async function OrdersPage() {
 
           <tbody>
 
-            {orders.map((order) => (
+            {orders.map((order: any) => (
 
               <tr
                 key={order.id}
