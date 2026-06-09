@@ -207,7 +207,7 @@ export default async function ProductPage({
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
 
-            {related.map((shoe) => (
+            {related.map((shoe: any) => (
 
               <Link
                 key={shoe.id}
