@@ -1,34 +1,29 @@
-import { prisma }
-from "@/lib/prisma";
+export const dynamic = "force-dynamic";
 
-export default async function OrdersPage(){
+import { prisma } from "@/lib/prisma";
 
- const orders =
- await prisma.order.findMany();
+export default async function OrdersPage() {
+  const orders =
+    await prisma.order.findMany();
 
- return(
+  return (
+    <div className="p-10">
+      <h1
+        className="
+        text-4xl
+        mb-10
+        "
+      >
+        Orders
+      </h1>
 
-  <div className="p-10">
-
-   <h1
-    className="
-    text-4xl
-    mb-10
-    "
-   >
-    Orders
-   </h1>
-
-   <pre>
-    {JSON.stringify(
-      orders,
-      null,
-      2
-    )}
-   </pre>
-
-  </div>
-
- );
-
+      <pre>
+        {JSON.stringify(
+          orders,
+          null,
+          2
+        )}
+      </pre>
+    </div>
+  );
 }

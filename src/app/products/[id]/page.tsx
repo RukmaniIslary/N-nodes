@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Image from "next/image";
 import Link from "next/link";
 
@@ -48,8 +50,6 @@ export default async function ProductPage({
 
       <div className="grid lg:grid-cols-2 gap-16">
 
-        {/* LEFT */}
-
         <div
           className="
           rounded-3xl
@@ -71,8 +71,6 @@ export default async function ProductPage({
             "
           />
         </div>
-
-        {/* RIGHT */}
 
         <div>
 
@@ -190,8 +188,6 @@ export default async function ProductPage({
 
       </div>
 
-      {/* RELATED */}
-
       {related.length > 0 && (
         <div className="mt-24">
 
@@ -211,7 +207,7 @@ export default async function ProductPage({
 
               <Link
                 key={shoe.id}
-                href={`/product/${shoe.id}`}
+                href={`/products/${shoe.id}`}
               >
 
                 <div

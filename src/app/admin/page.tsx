@@ -1,8 +1,9 @@
+export const dynamic = "force-dynamic";
+
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
 
 export default async function AdminDashboard() {
-
   await requireAdmin();
 
   const [
@@ -17,13 +18,11 @@ export default async function AdminDashboard() {
 
   return (
     <div className="p-10">
-
       <h1 className="text-5xl font-black mb-10">
         Dashboard
       </h1>
 
       <div className="grid md:grid-cols-3 gap-6">
-
         <div className="glass p-6 rounded-3xl">
           <h2>Products</h2>
           <p className="text-4xl">{products}</p>
@@ -38,9 +37,7 @@ export default async function AdminDashboard() {
           <h2>Users</h2>
           <p className="text-4xl">{users}</p>
         </div>
-
       </div>
-
     </div>
   );
 }
