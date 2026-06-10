@@ -2,41 +2,77 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function RegisterPage() {
   const router = useRouter();
 
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [name, setName] =
+    useState("");
+
+  const [email, setEmail] =
+    useState("");
+
+  const [password, setPassword] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const [success, setSuccess] =
+    useState("");
 
   async function submit() {
     try {
-      const response = await fetch("/api/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-        }),
-      });
+      setLoading(true);
+      setError("");
+      setSuccess("");
 
-      const data = await response.json();
+      const response =
+        await fetch("/api/register", {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            name,
+            email,
+            password,
+          }),
+        });
+
+      const data =
+        await response.json();
 
       if (!response.ok) {
-        alert(data.error || "Registration failed");
+        setError(
+          data.error ||
+            "Registration failed"
+        );
+        setLoading(false);
         return;
       }
 
-      alert("Account created successfully");
+      setSuccess(
+        "Account created successfully. Redirecting..."
+      );
 
-      router.push("/login");
+      setTimeout(() => {
+        router.push("/login");
+      }, 1500);
+
     } catch (error) {
       console.error(error);
-      alert("Registration failed");
+
+      setError(
+        "Registration failed"
+      );
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -47,58 +83,174 @@ export default function RegisterPage() {
       flex
       items-center
       justify-center
+      px-6
+      bg-black
       "
     >
       <div
         className="
+        w-full
+        max-w-md
         glass
-        p-10
         rounded-3xl
-        w-[450px]
+        p-10
+        border
+        border-white/10
         "
       >
-        <h1
+        <div
           className="
-          text-4xl
-          font-black
+          text-center
           mb-8
           "
         >
-          Register
-        </h1>
+          <h1
+            className="
+            text-5xl
+            font-black
+            bg-gradient-to-r
+            from-red-500
+            to-purple-500
+            bg-clip-text
+            text-transparent
+            "
+          >
+            N-Nodes
+          </h1>
 
-        <input
-          placeholder="Name"
-          className="glass p-4 w-full"
-          onChange={(e) => setName(e.target.value)}
-        />
+          <p
+            className="
+            text-gray-400
+            mt-3
+            "
+          >
+            Join the premium sneaker universe
+          </p>
+        </div>
 
-        <input
-          placeholder="Email"
-          className="glass p-4 w-full mt-4"
-          onChange={(e) => setEmail(e.target.value)}
-        />
+        {error && (
+          <div
+            className="
+            bg-red-500/10
+            border
+            border-red-500/30
+            text-red-400
+            p-3
+            rounded-xl
+            mb-4
+            "
+          >
+            {error}
+          </div>
+        )}
 
-        <input
-          type="password"
-          placeholder="Password"
-          className="glass p-4 w-full mt-4"
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        {success && (
+          <div
+            className="
+            bg-green-500/10
+            border
+            border-green-500/30
+            text-green-400
+            p-3
+            rounded-xl
+            mb-4
+            "
+          >
+            {success}
+          </div>
+        )}
 
-        <button
-          onClick={submit}
+        <div className="space-y-4">
+
+          <input
+            placeholder="Full Name"
+            value={name}
+            onChange={(e) =>
+              setName(
+                e.target.value
+              )
+            }
+            className="
+            glass
+            p-4
+            w-full
+            rounded-xl
+            "
+          />
+
+          <input
+            type="email"
+            placeholder="Email Address"
+            value={email}
+            onChange={(e) =>
+              setEmail(
+                e.target.value
+              )
+            }
+            className="
+            glass
+            p-4
+            w-full
+            rounded-xl
+            "
+          />
+
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) =>
+              setPassword(
+                e.target.value
+              )
+            }
+            className="
+            glass
+            p-4
+            w-full
+            rounded-xl
+            "
+          />
+
+          <button
+            onClick={submit}
+            disabled={loading}
+            className="
+            w-full
+            bg-red-500
+            hover:bg-red-600
+            transition
+            py-4
+            rounded-xl
+            font-bold
+            disabled:opacity-50
+            "
+          >
+            {loading
+              ? "Creating Account..."
+              : "Create Account"}
+          </button>
+
+        </div>
+
+        <div
           className="
-          bg-red-500
-          px-6
-          py-3
-          rounded-xl
+          text-center
           mt-6
-          w-full
+          text-gray-400
           "
         >
-          Register
-        </button>
+          Already have an account?{" "}
+          <Link
+            href="/login"
+            className="
+            text-red-400
+            hover:text-red-300
+            "
+          >
+            Sign In
+          </Link>
+        </div>
       </div>
     </div>
   );
