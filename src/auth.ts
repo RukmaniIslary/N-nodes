@@ -1,47 +1,99 @@
-async authorize(credentials) {
+import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
 
-  const email =
-    credentials.email as string;
+import bcrypt from "bcryptjs";
 
-  const password =
-    credentials.password as string;
+import { PrismaAdapter } from "@auth/prisma-adapter";
 
-  console.log("LOGIN EMAIL:", email);
+import { prisma } from "@/lib/prisma";
 
-  const user =
-    await prisma.user.findUnique({
-      where: {
-        email
+export const {
+  handlers,
+  auth,
+  signIn,
+  signOut
+} = NextAuth({
+
+  adapter: PrismaAdapter(prisma),
+
+  session: {
+    strategy: "jwt"
+  },
+
+  providers: [
+
+    Credentials({
+
+      name: "credentials",
+
+      credentials: {
+        email: {},
+        password: {}
+      },
+
+      async authorize(credentials) {
+
+        const email =
+          credentials.email as string;
+
+        const password =
+          credentials.password as string;
+
+        const user =
+          await prisma.user.findUnique({
+            where: {
+              email
+            }
+          });
+
+        if (!user)
+          return null;
+
+        const valid =
+          await bcrypt.compare(
+            password,
+            user.password
+          );
+
+        if (!valid)
+          return null;
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role
+        };
+
       }
-    });
 
-  if (!user) {
-    console.log("USER NOT FOUND");
-    return null;
+    })
+
+  ],
+
+  callbacks: {
+
+    async jwt({ token, user }) {
+
+      if (user) {
+        token.role =
+          (user as any).role;
+      }
+
+      return token;
+    },
+
+    async session({
+      session,
+      token
+    }) {
+
+      (session.user as any).role =
+        token.role;
+
+      return session;
+    }
+
   }
 
-  console.log("DB USER:", user.email);
-
-  const valid =
-    await bcrypt.compare(
-      password,
-      user.password
-    );
-
-  console.log("PASSWORD VALID:", valid);
-
-  if (!valid) {
-    console.log("PASSWORD FAILED");
-    return null;
-  }
-
-  console.log("LOGIN SUCCESS");
-
-  return {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role
-  };
-
-}
+});
