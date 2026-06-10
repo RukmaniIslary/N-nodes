@@ -11,13 +11,13 @@ export const {
   handlers,
   auth,
   signIn,
-  signOut
+  signOut,
 } = NextAuth({
 
   adapter: PrismaAdapter(prisma),
 
   session: {
-    strategy: "jwt"
+    strategy: "jwt",
   },
 
   providers: [
@@ -28,52 +28,95 @@ export const {
 
       credentials: {
         email: {},
-        password: {}
+        password: {},
       },
 
       async authorize(credentials) {
 
-        const email =
-          credentials.email as string;
+        try {
 
-        const password =
-          credentials.password as string;
+          const email =
+            credentials?.email as string;
 
-        const user =
-          await prisma.user.findUnique({
-            where: {
-              email
-            }
-          });
+          const password =
+            credentials?.password as string;
 
-        if (!user)
-          return null;
-
-        const valid =
-          await bcrypt.compare(
-            password,
-            user.password
+          console.log(
+            "LOGIN ATTEMPT:",
+            email
           );
 
-        if (!valid)
+          const user =
+            await prisma.user.findUnique({
+              where: {
+                email,
+              },
+            });
+
+          console.log(
+            "USER FOUND:",
+            !!user
+          );
+
+          if (!user) {
+            console.log(
+              "USER NOT FOUND"
+            );
+            return null;
+          }
+
+          const valid =
+            await bcrypt.compare(
+              password,
+              user.password
+            );
+
+          console.log(
+            "PASSWORD VALID:",
+            valid
+          );
+
+          if (!valid) {
+            console.log(
+              "PASSWORD FAILED"
+            );
+            return null;
+          }
+
+          console.log(
+            "LOGIN SUCCESS:",
+            user.email
+          );
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+          };
+
+        } catch (error) {
+
+          console.error(
+            "AUTHORIZE ERROR:",
+            error
+          );
+
           return null;
+        }
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role
-        };
+      },
 
-      }
-
-    })
+    }),
 
   ],
 
   callbacks: {
 
-    async jwt({ token, user }) {
+    async jwt({
+      token,
+      user,
+    }) {
 
       if (user) {
         token.role =
@@ -85,15 +128,15 @@ export const {
 
     async session({
       session,
-      token
+      token,
     }) {
 
       (session.user as any).role =
         token.role;
 
       return session;
-    }
+    },
 
-  }
+  },
 
 });
