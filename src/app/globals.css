@@ -24,6 +24,7 @@ body {
 
   color:white;
   overflow-x:hidden;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
 .glass {

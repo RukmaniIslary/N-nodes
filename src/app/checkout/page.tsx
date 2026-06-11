@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
+import Navbar from "@/components/navbar/Navbar";
+import Footer from "@/components/layout/Footer";
 import { useCartStore } from "@/store/cartStore";
 import PayWithMaxelPay from "@/components/checkout/PayWithMaxelPay";
 
@@ -24,12 +27,28 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-10">
+    <>
+      <Navbar />
+
+      <div className="max-w-7xl mx-auto p-10 pt-32 min-h-screen">
 
       <h1 className="text-5xl font-black mb-10">
         Checkout
       </h1>
 
+      {items.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <p className="text-gray-400 mb-6">
+            Your cart is empty.
+          </p>
+          <Link
+            href="/#shop"
+            className="bg-red-500 hover:bg-red-600 px-8 py-3 rounded-xl font-semibold transition"
+          >
+            Continue Shopping
+          </Link>
+        </div>
+      ) : (
       <div className="grid lg:grid-cols-3 gap-8">
 
         {/* LEFT */}
@@ -331,7 +350,11 @@ export default function CheckoutPage() {
         </div>
 
       </div>
+      )}
 
-    </div>
+      </div>
+
+      <Footer />
+    </>
   );
 }

@@ -72,16 +72,26 @@ export default function Navbar() {
           tracking-widest
           "
         >
-          <button>Shop</button>
-          <button>Collections</button>
-          <button>Featured</button>
-          <button>Contact</button>
+          <Link href="/#shop" className="hover:text-red-400 transition">
+            Shop
+          </Link>
+          <Link href="/#shop" className="hover:text-red-400 transition">
+            Collections
+          </Link>
+          <Link href="/#shop" className="hover:text-red-400 transition">
+            Featured
+          </Link>
+          <Link href="/#contact" className="hover:text-red-400 transition">
+            Contact
+          </Link>
         </div>
 
         <div className="flex items-center gap-4">
 
           {/* Search */}
-          <button
+          <Link
+            href="/#shop"
+            aria-label="Search products"
             className="
             p-3
             rounded-xl
@@ -91,7 +101,7 @@ export default function Navbar() {
             "
           >
             <Search size={18} />
-          </button>
+          </Link>
 
           {/* Wishlist */}
           <Link

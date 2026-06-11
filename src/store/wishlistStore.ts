@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 interface WishlistState {
   items: string[];
@@ -8,21 +9,22 @@ interface WishlistState {
   isWishlisted: (id: string) => boolean;
 }
 
-export const useWishlistStore =
-  create<WishlistState>((set, get) => ({
+export const useWishlistStore = create<WishlistState>()(
+  persist(
+    (set, get) => ({
+      items: [],
 
-    items: [],
+      toggle: (id) =>
+        set((state) => ({
+          items: state.items.includes(id)
+            ? state.items.filter((x) => x !== id)
+            : [...state.items, id],
+        })),
 
-    toggle: (id) =>
-      set((state) => ({
-        items: state.items.includes(id)
-          ? state.items.filter(
-              (x) => x !== id
-            )
-          : [...state.items, id],
-      })),
-
-    isWishlisted: (id) =>
-      get().items.includes(id),
-
-  }));
+      isWishlisted: (id) => get().items.includes(id),
+    }),
+    {
+      name: "nnodes-wishlist",
+    }
+  )
+);

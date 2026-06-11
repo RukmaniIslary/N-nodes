@@ -1,13 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart, ShoppingBag, Star } from "lucide-react";
+import { X, Heart, ArrowRight, Star } from "lucide-react";
 
 import SneakerViewer from "./SneakerViewer";
+
+import { useWishlistStore } from "@/store/wishlistStore";
 
 interface Props {
   open: boolean;
   onClose: () => void;
+  productId?: string;
   model: string;
   name?: string;
   price?: number;
@@ -17,11 +21,16 @@ interface Props {
 export default function QuickViewModal({
   open,
   onClose,
+  productId,
   model,
   name = "Nike Sneaker",
   price = 170,
   rating = 4.9,
 }: Props) {
+  const toggle = useWishlistStore((s) => s.toggle);
+  const isWishlisted = useWishlistStore((s) =>
+    productId ? s.isWishlisted(productId) : false
+  );
   return (
     <AnimatePresence>
       {open && (
@@ -160,7 +169,13 @@ export default function QuickViewModal({
                 </p>
 
                 <div className="flex gap-4">
-                  <button
+                  <Link
+                    href={
+                      productId
+                        ? `/products/${productId}`
+                        : "#"
+                    }
+                    onClick={onClose}
                     className="
                     flex-1
                     bg-red-500
@@ -173,24 +188,35 @@ export default function QuickViewModal({
                     justify-center
                     gap-2
                     font-semibold
+                    transition
                     "
                   >
-                    <ShoppingBag size={20} />
-                    Add To Cart
-                  </button>
+                    Select Size & Buy
+                    <ArrowRight size={20} />
+                  </Link>
 
                   <button
-                    className="
+                    onClick={() =>
+                      productId && toggle(productId)
+                    }
+                    className={`
                     px-6
                     py-4
                     rounded-2xl
                     border
                     border-white/10
-                    bg-white/5
-                    hover:bg-white/10
-                    "
+                    transition
+                    ${
+                      isWishlisted
+                        ? "bg-red-500/20 text-red-400"
+                        : "bg-white/5 hover:bg-white/10"
+                    }
+                    `}
                   >
-                    <Heart size={22} />
+                    <Heart
+                      size={22}
+                      fill={isWishlisted ? "currentColor" : "none"}
+                    />
                   </button>
                 </div>
               </div>

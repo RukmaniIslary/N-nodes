@@ -9,21 +9,30 @@ interface Props {
   }>;
 }
 
+async function getProductWithSizes(id: string) {
+  // The ProductSize table may not exist in every environment.
+  // Try to include sizes, and gracefully fall back if the relation
+  // query fails so the product page always renders.
+  try {
+    return await prisma.product.findUnique({
+      where: { id },
+      include: { sizes: true },
+    });
+  } catch {
+    const product = await prisma.product.findUnique({
+      where: { id },
+    });
+
+    return product ? { ...product, sizes: [] } : null;
+  }
+}
+
 export default async function ProductPage({
   params,
 }: Props) {
   const { id } = await params;
 
-  const product =
-    await prisma.product.findUnique({
-      where: {
-        id,
-      },
-
-      include: {
-        sizes: true,
-      },
-    });
+  const product = await getProductWithSizes(id);
 
   if (!product) {
     return (
