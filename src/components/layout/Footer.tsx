@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Instagram, Twitter, Facebook, Youtube } from "lucide-react";
+
+const socials = ["Instagram", "Twitter", "Facebook", "YouTube"];
 
 const columns = [
   {
@@ -70,25 +71,25 @@ export default function Footer() {
               every order.
             </p>
 
-            <div className="flex gap-3 mt-6">
-              {[Instagram, Twitter, Facebook, Youtube].map(
-                (Icon, i) => (
-                  <a
-                    key={i}
-                    href="#"
-                    aria-label="Social link"
-                    className="
-                    p-3
-                    rounded-xl
-                    bg-white/5
-                    hover:bg-red-500
-                    transition
-                    "
-                  >
-                    <Icon size={18} />
-                  </a>
-                )
-              )}
+            <div className="flex flex-wrap gap-3 mt-6">
+              {socials.map((label) => (
+                <a
+                  key={label}
+                  href="#"
+                  aria-label={label}
+                  className="
+                  px-4
+                  py-2
+                  text-sm
+                  rounded-xl
+                  bg-white/5
+                  hover:bg-red-500
+                  transition
+                  "
+                >
+                  {label}
+                </a>
+              ))}
             </div>
           </div>
 

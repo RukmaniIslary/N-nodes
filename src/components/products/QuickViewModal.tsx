@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Heart, ArrowRight, Star } from "lucide-react";
+import { X, Heart, ShoppingBag, Star } from "lucide-react";
 
 import SneakerViewer from "./SneakerViewer";
 
@@ -192,7 +192,7 @@ export default function QuickViewModal({
                     "
                   >
                     Select Size & Buy
-                    <ArrowRight size={20} />
+                    <ShoppingBag size={20} />
                   </Link>
 
                   <button
