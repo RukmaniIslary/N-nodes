@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 
 import AddToCartButton from "@/components/products/AddToCartButton";
 import WishlistButton from "@/components/products/WishlistButton";
+import SizeSelector from "@/components/products/SizeSelector";
 
 interface Props {
   params: Promise<{
@@ -23,6 +24,10 @@ export default async function ProductPage({
     await prisma.product.findUnique({
       where: {
         id,
+      },
+
+      include: {
+        sizes: true,
       },
     });
 
@@ -138,6 +143,10 @@ export default async function ProductPage({
             </div>
 
           </div>
+
+          <SizeSelector
+            sizes={product.sizes}
+          />
 
           <div className="mt-10 flex gap-4">
 

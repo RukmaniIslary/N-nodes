@@ -29,6 +29,7 @@ model Product {
   id String @id @default(cuid())
 
   name String
+
   slug String @unique
 
   description String
@@ -43,8 +44,23 @@ model Product {
 
   featured Boolean @default(false)
 
+  sizes ProductSize[]
+
   createdAt DateTime @default(now())
+
   updatedAt DateTime @updatedAt
+}
+
+model ProductSize {
+  id String @id @default(cuid())
+
+  productId String
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  size String
+
+  stock Int
 }
 
 model Order {
@@ -66,10 +82,23 @@ model Order {
 model Wishlist {
   id String @id @default(cuid())
 
-  userId    String
+  userId String
+
   productId String
 
   user User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model CartItem {
+  id String @id @default(cuid())
+
+  userId String
+
+  productId String
+
+  quantity Int @default(1)
 
   createdAt DateTime @default(now())
 }
@@ -85,16 +114,4 @@ enum OrderStatus {
   FAILED
   SHIPPED
   DELIVERED
-}
-
-model CartItem {
-  id String @id @default(cuid())
-
-  userId String
-
-  productId String
-
-  quantity Int @default(1)
-
-  createdAt DateTime @default(now())
 }
