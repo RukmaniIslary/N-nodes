@@ -172,11 +172,11 @@ export default function CheckoutPage() {
               </div>
 
               <div className="text-blue-400">
-                Secure Crypto Checkout
+                Secure Checkout
               </div>
 
               <div className="text-yellow-400">
-                Estimated Delivery: 5-10 Days
+                Estimated Delivery: 5-7 Days
               </div>
             </div>
 
