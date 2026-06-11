@@ -7,7 +7,7 @@ import MouseRig from "../3d/MouseRig";
 
 export default function Logo3D() {
   return (
-    <div className="h-[500px] w-full">
+    <div className="hidden md:block h-[500px] w-full">
       <SceneCanvas>
 
         <MouseRig>

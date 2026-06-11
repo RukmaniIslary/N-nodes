@@ -21,6 +21,8 @@ export default function HeroSection() {
         absolute
         inset-0
         opacity-70
+        hidden
+        lg:block
         "
       >
         <Logo3D />

@@ -28,7 +28,7 @@ export default function Navbar() {
       left-0
       w-full
       z-50
-      backdrop-blur-2xl
+      backdrop-blur-sm
       bg-black/30
       border-b
       border-white/10
