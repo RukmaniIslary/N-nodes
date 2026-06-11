@@ -213,7 +213,7 @@ export default function CheckoutPage() {
               {items.map((item) => (
 
                 <div
-                  key={item.id}
+                  key={`${item.id}-${item.size}`}
                   className="
                   flex
                   gap-4
@@ -231,6 +231,15 @@ export default function CheckoutPage() {
 
                     <div className="font-semibold">
                       {item.name}
+                    </div>
+
+                    <div
+                      className="
+                      text-gray-400
+                      text-sm
+                      "
+                    >
+                      Size: US {item.size}
                     </div>
 
                     <div

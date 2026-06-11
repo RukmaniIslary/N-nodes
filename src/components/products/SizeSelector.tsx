@@ -1,20 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function SizeSelector({
   sizes,
+  onSizeSelect,
+  selectedSize,
 }: {
   sizes: {
     id: string;
     size: string;
     stock: number;
   }[];
+  onSizeSelect?: (size: string) => void;
+  selectedSize?: string;
 }) {
 
   const [selected,
     setSelected] =
-    useState("");
+    useState(selectedSize || "");
+
+  useEffect(() => {
+    if (selectedSize !== undefined) {
+      setSelected(selectedSize);
+    }
+  }, [selectedSize]);
+
+  const handleSelect = (size: string) => {
+    setSelected(size);
+    onSizeSelect?.(size);
+  };
 
   return (
 
@@ -43,7 +58,7 @@ export default function SizeSelector({
           <button
             key={size.id}
             onClick={() =>
-              setSelected(
+              handleSelect(
                 size.size
               )
             }

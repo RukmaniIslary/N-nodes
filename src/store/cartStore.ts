@@ -9,6 +9,7 @@ interface CartItem {
   image: string;
   price: number;
   quantity: number;
+  size: string;
 }
 
 interface CartState {
@@ -21,11 +22,11 @@ interface CartState {
 
   addItem: (item: Omit<CartItem, "quantity">) => void;
 
-  removeItem: (id: string) => void;
+  removeItem: (id: string, size: string) => void;
 
-  increase: (id: string) => void;
+  increase: (id: string, size: string) => void;
 
-  decrease: (id: string) => void;
+  decrease: (id: string, size: string) => void;
 
   subtotal: () => number;
 
@@ -52,13 +53,13 @@ export const useCartStore = create<CartState>()(
       addItem: (item) => {
         const existing =
           get().items.find(
-            (i) => i.id === item.id
+            (i) => i.id === item.id && i.size === item.size
           );
 
         if (existing) {
           set({
             items: get().items.map((i) =>
-              i.id === item.id
+              i.id === item.id && i.size === item.size
                 ? {
                     ...i,
                     quantity:
@@ -82,17 +83,17 @@ export const useCartStore = create<CartState>()(
         });
       },
 
-      removeItem: (id) =>
+      removeItem: (id, size) =>
         set({
           items: get().items.filter(
-            (i) => i.id !== id
+            (i) => !(i.id === id && i.size === size)
           ),
         }),
 
-      increase: (id) =>
+      increase: (id, size) =>
         set({
           items: get().items.map((i) =>
-            i.id === id
+            i.id === id && i.size === size
               ? {
                   ...i,
                   quantity:
@@ -102,10 +103,10 @@ export const useCartStore = create<CartState>()(
           ),
         }),
 
-      decrease: (id) =>
+      decrease: (id, size) =>
         set({
           items: get().items.map((i) =>
-            i.id === id
+            i.id === id && i.size === size
               ? {
                   ...i,
                   quantity: Math.max(

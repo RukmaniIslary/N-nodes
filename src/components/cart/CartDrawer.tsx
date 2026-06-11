@@ -113,7 +113,7 @@ export default function CartDrawer() {
             <div className="space-y-6">
               {items.map((item) => (
                 <div
-                  key={item.id}
+                  key={`${item.id}-${item.size}`}
                   className="
                   rounded-2xl
                   border
@@ -143,6 +143,10 @@ export default function CartDrawer() {
                     {item.name}
                   </h3>
 
+                  <p className="text-gray-400 text-sm">
+                    Size: US {item.size}
+                  </p>
+
                   <p className="text-red-400">
                     ${item.price}
                   </p>
@@ -157,7 +161,7 @@ export default function CartDrawer() {
                   >
                     <button
                       onClick={() =>
-                        decrease(item.id)
+                        decrease(item.id, item.size)
                       }
                       className="
                       p-2
@@ -174,7 +178,7 @@ export default function CartDrawer() {
 
                     <button
                       onClick={() =>
-                        increase(item.id)
+                        increase(item.id, item.size)
                       }
                       className="
                       p-2
@@ -188,7 +192,7 @@ export default function CartDrawer() {
 
                   <button
                     onClick={() =>
-                      removeItem(item.id)
+                      removeItem(item.id, item.size)
                     }
                     className="
                     mt-4
