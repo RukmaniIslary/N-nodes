@@ -16,7 +16,7 @@ export async function GET() {
   }
 
   const valid = await bcrypt.compare(
-    "@SKUNKTECH1",
+    "@Skunktech1",
     user.password
   );
 
