@@ -1,28 +1,41 @@
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+
 import AdminSidebar from "@/components/admin/AdminSidebar";
 
-export default function AdminLayout({
- children
-}:{
- children:React.ReactNode
-}){
+export default async function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
 
- return(
+  const session = await auth();
 
-  <div className="flex">
+  if (!session) {
+    redirect("/login");
+  }
 
-   <AdminSidebar />
+  if (
+    (session.user as any)?.role !==
+    "ADMIN"
+  ) {
+    redirect("/");
+  }
 
-   <main
-    className="
-    flex-1
-    p-8
-    "
-   >
-    {children}
-   </main>
+  return (
+    <div className="flex">
 
-  </div>
+      <AdminSidebar />
 
- );
+      <main
+        className="
+        flex-1
+        p-8
+        "
+      >
+        {children}
+      </main>
 
+    </div>
+  );
 }
