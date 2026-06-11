@@ -198,8 +198,6 @@ export default function ProductCard({
           >
             <button
               onClick={() => {
-                alert("ADD TO CART CLICKED");
-
                 addItem({
                   id: product.id,
                   name: product.name,
