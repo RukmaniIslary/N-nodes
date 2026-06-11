@@ -12,7 +12,6 @@ import { Product } from "@/types/product";
 import { getDiscountPrice } from "@/lib/pricing";
 
 import { useWishlistStore } from "@/store/wishlistStore";
-import { useCartStore } from "@/store/cartStore";
 
 export default function ProductCard({
   product,
@@ -24,11 +23,8 @@ export default function ProductCard({
   const toggle =
     useWishlistStore((s) => s.toggle);
 
-  const addItem =
-    useCartStore((s) => s.addItem);
-
-  const openCart =
-    useCartStore((s) => s.openCart);
+  const isWishlisted =
+    useWishlistStore((s) => s.isWishlisted(product.id));
 
   const pricing =
     getDiscountPrice(product.price);
@@ -94,20 +90,27 @@ export default function ProductCard({
 
             <button
               onClick={() => toggle(product.id)}
-              className="
+              aria-label="Toggle wishlist"
+              className={`
               absolute
               top-3
               right-3
               z-10
-              bg-black/30
               backdrop-blur
               p-2
               rounded-full
-              hover:bg-red-500
               transition
-              "
+              ${
+                isWishlisted
+                  ? "bg-red-500 text-white"
+                  : "bg-black/30 hover:bg-red-500"
+              }
+              `}
             >
-              <Heart size={18} />
+              <Heart
+                size={18}
+                fill={isWishlisted ? "currentColor" : "none"}
+              />
             </button>
 
             <Image
@@ -141,7 +144,7 @@ export default function ProductCard({
             />
           </div>
 
-          <Link href={`/product/${product.id}`}>
+          <Link href={`/products/${product.id}`}>
             <h3
               className="
               mt-5
@@ -196,17 +199,8 @@ export default function ProductCard({
             mt-5
             "
           >
-            <button
-              onClick={() => {
-                addItem({
-                  id: product.id,
-                  name: product.name,
-                  image: product.image,
-                  price: product.price,
-                });
-
-                openCart();
-              }}
+            <Link
+              href={`/products/${product.id}`}
               className="
               relative
               z-20
@@ -217,10 +211,11 @@ export default function ProductCard({
               py-3
               font-semibold
               transition
+              text-center
               "
             >
-              Add To Cart
-            </button>
+              Select Size
+            </Link>
 
             <button
               onClick={() => setOpen(true)}
@@ -243,6 +238,7 @@ export default function ProductCard({
       <QuickViewModal
         open={open}
         onClose={() => setOpen(false)}
+        productId={product.id}
         model={
           product.model ||
           "/models/air-jordan.glb"
