@@ -16,11 +16,11 @@ export async function POST(request: Request) {
           orderId: `order_${Date.now()}`,
           amount: body.amount,
           currency: "USD",
-          description: "N-Nodes Sneaker Order",
+          description: "N-Nodes Order",
           successUrl:
-            "http://localhost:3000/payment/success",
+            "https://n-nodes.com/payment/success",
           cancelUrl:
-            "http://localhost:3000/payment/cancel",
+            "https://n-nodes.com/payment/cancel",
           customerEmail:
             body.email || "customer@example.com",
         }),

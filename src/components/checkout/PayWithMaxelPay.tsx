@@ -1,13 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import { useCartStore } from "@/store/cartStore";
 
 export default function PayWithMaxelPay() {
   const subtotal =
     useCartStore((s) => s.subtotal);
 
+  const [loading, setLoading] =
+    useState(false);
+
   async function pay() {
     try {
+      setLoading(true);
+
       const response = await fetch(
         "/api/maxelpay/session",
         {
@@ -37,7 +43,6 @@ export default function PayWithMaxelPay() {
       ) {
         window.location.href =
           data.data.paymentUrl;
-
         return;
       }
 
@@ -46,23 +51,40 @@ export default function PayWithMaxelPay() {
       ) {
         window.location.href =
           data.paymentUrl;
-
         return;
       }
 
-      alert(
-        "Failed to create payment session"
-      );
+      if (
+        data?.data?.checkoutUrl
+      ) {
+        window.location.href =
+          data.data.checkoutUrl;
+        return;
+      }
 
-      console.log(data);
+      if (
+        data?.checkoutUrl
+      ) {
+        window.location.href =
+          data.checkoutUrl;
+        return;
+      }
+
+      console.error(
+        "No payment URL found:",
+        data
+      );
 
     } catch (error) {
 
-      console.error(error);
-
-      alert(
-        "Payment error. Check browser console."
+      console.error(
+        "PAYMENT ERROR:",
+        error
       );
+
+    } finally {
+
+      setLoading(false);
 
     }
   }
@@ -70,6 +92,7 @@ export default function PayWithMaxelPay() {
   return (
     <button
       onClick={pay}
+      disabled={loading}
       className="
       w-full
       mt-8
@@ -79,9 +102,12 @@ export default function PayWithMaxelPay() {
       hover:bg-green-600
       text-lg
       font-bold
+      disabled:opacity-50
       "
     >
-      Pay With Crypto
+      {loading
+        ? "Creating Payment..."
+        : "Pay With Crypto"}
     </button>
   );
 }
