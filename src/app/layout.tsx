@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata = {
   title: "N-Nodes",
-  description: "Premium Sneaker Universe",
+  description: "Universe",
 };
 
 export default function RootLayout({
