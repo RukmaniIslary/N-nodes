@@ -32,40 +32,6 @@ export default function CheckoutPage() {
 
       <div className="grid lg:grid-cols-3 gap-8">
 
-        "use client";
-
-import { useEffect, useState } from "react";
-import Image from "next/image";
-
-import { useCartStore } from "@/store/cartStore";
-import PayWithMaxelPay from "@/components/checkout/PayWithMaxelPay";
-
-export default function CheckoutPage() {
-  const [mounted, setMounted] = useState(false);
-
-  const items =
-    useCartStore((s) => s.items);
-
-  const subtotal =
-    useCartStore((s) => s.subtotal);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return null;
-  }
-
-  return (
-    <div className="max-w-7xl mx-auto p-10">
-
-      <h1 className="text-5xl font-black mb-10">
-        Checkout
-      </h1>
-
-      <div className="grid lg:grid-cols-3 gap-8">
-
         {/* LEFT */}
         <div className="lg:col-span-2">
 
