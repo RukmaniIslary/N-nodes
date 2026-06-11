@@ -1,18 +1,15 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 
 import { products } from "@/data/products";
 
 import { useWishlistStore } from "@/store/wishlistStore";
-import { useCartStore } from "@/store/cartStore";
 
 export default function WishlistPage() {
   const wishlist =
     useWishlistStore((s) => s.items);
-
-  const addItem =
-    useCartStore((s) => s.addItem);
 
   const savedProducts =
     products.filter((p) =>
@@ -67,20 +64,22 @@ export default function WishlistPage() {
                 ${product.price}
               </p>
 
-              <button
-                onClick={() =>
-                  addItem(product)
-                }
+              <Link
+                href={`/products/${product.id}`}
                 className="
+                block
                 w-full
                 mt-4
                 py-3
                 rounded-xl
                 bg-red-500
+                hover:bg-red-600
+                text-center
+                transition
                 "
               >
-                Add To Cart
-              </button>
+                Select Size
+              </Link>
 
             </div>
 
